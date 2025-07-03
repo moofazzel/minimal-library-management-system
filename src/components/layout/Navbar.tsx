@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Home, Plus } from "lucide-react";
+import { BarChart3, BookOpen, BookText, Home, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/Button";
 
@@ -9,6 +9,7 @@ const Navbar = () => {
     { path: "/", label: "Home", icon: Home },
     { path: "/books", label: "All Books", icon: BookOpen },
     { path: "/create-book", label: "Add Book", icon: Plus },
+    { path: "/book-demo", label: "Book Demo", icon: BookText },
     { path: "/borrow-summary", label: "Borrow Summary", icon: BarChart3 },
   ];
 

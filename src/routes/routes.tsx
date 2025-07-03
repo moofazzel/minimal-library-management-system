@@ -7,8 +7,9 @@ const BooksPage = lazy(() => import("@/pages/BooksPage"));
 const BorrowBookPage = lazy(() => import("@/pages/BorrowBookPage"));
 const BorrowSummaryPage = lazy(() => import("@/pages/BorrowSummaryPage"));
 const EditBookPage = lazy(() => import("@/pages/EditBookPage"));
-const HomePage = lazy(() => import("@/pages/HomePage"));
+const HomePage = lazy(() => import("@/pages/home/HomePage"));
 const CreateBookPage = lazy(() => import("@/pages/CreateBookPage"));
+const BookDemoPage = lazy(() => import("@/pages/BookDemoPage"));
 
 const router = createBrowserRouter([
   {
@@ -64,6 +65,14 @@ const router = createBrowserRouter([
     element: (
       <Layout>
         <BorrowSummaryPage />
+      </Layout>
+    ),
+  },
+  {
+    path: "/book-demo",
+    element: (
+      <Layout>
+        <BookDemoPage />
       </Layout>
     ),
   },
