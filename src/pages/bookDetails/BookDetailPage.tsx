@@ -164,7 +164,7 @@ const BookDetailPage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 container mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button

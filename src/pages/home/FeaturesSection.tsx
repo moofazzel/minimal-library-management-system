@@ -29,13 +29,13 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
+      <div className="container mx-auto px-3 sm:px-0">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">
-            Why Choose <span className="text-primary">LibraryHub</span>
+          <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-purple-600 bg-clip-text text-transparent">
+            Why Choose <span className="text-purple-600">LibraryHub</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Experience the perfect blend of traditional library values and
             modern technology
           </p>
@@ -44,16 +44,28 @@ const FeaturesSection = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
+            const gradients = [
+              "from-blue-500 to-indigo-600",
+              "from-purple-500 to-pink-600",
+              "from-emerald-500 to-teal-600",
+              "from-orange-500 to-red-600",
+            ];
+            const gradient = gradients[index % gradients.length];
+
             return (
               <div
                 key={index}
-                className="group p-6 bg-card rounded-xl border hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+                className="group p-8 bg-white rounded-2xl border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 hover:scale-105"
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 text-primary rounded-lg mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <Icon className="h-6 w-6" />
+                <div
+                  className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${gradient} text-white rounded-2xl mb-6 group-hover:scale-110 transition-all duration-300 shadow-lg`}
+                >
+                  <Icon className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-purple-600 transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
                   {feature.description}
                 </p>
               </div>

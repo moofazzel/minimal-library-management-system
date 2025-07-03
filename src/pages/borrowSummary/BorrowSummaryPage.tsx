@@ -3,7 +3,7 @@ import { useGetBorrowSummaryQuery } from "../../redux/api/baseApi";
 
 // Skeleton component for loading state
 const BorrowSummarySkeleton = () => (
-  <div className="space-y-6 max-w-6xl mx-auto">
+  <div className="space-y-6 container mx-auto">
     <div className="flex items-center gap-3">
       <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded animate-pulse" />
       <div className="h-8 w-48 bg-muted rounded animate-pulse" />
@@ -70,10 +70,10 @@ const BorrowSummaryPage = () => {
     );
   }
 
-  const summary = data?.data?.summary || [];
+  const summary = data?.data || [];
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 container mx-auto">
       <div className="flex items-center gap-3">
         <BookOpen className="h-8 w-8 text-primary" />
         <h2 className="text-3xl font-bold tracking-tight">Borrow Summary</h2>
@@ -98,21 +98,21 @@ const BorrowSummaryPage = () => {
 
           {/* Table Body */}
           <div className="divide-y">
-            {summary.map((item) => (
+            {summary.map((item, index) => (
               <div
-                key={item.bookId}
+                key={`${item.book.isbn}-${index}`}
                 className="grid grid-cols-3 gap-4 p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="font-medium text-foreground">
-                  {item.bookTitle}
+                  {item.book.title}
                 </div>
                 <div className="text-muted-foreground font-mono text-sm">
-                  {item.isbn}
+                  {item.book.isbn}
                 </div>
                 <div className="text-right">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                    {item.totalQuantityBorrowed}{" "}
-                    {item.totalQuantityBorrowed === 1 ? "copy" : "copies"}
+                    {item.totalQuantity}{" "}
+                    {item.totalQuantity === 1 ? "copy" : "copies"}
                   </span>
                 </div>
               </div>
@@ -143,10 +143,7 @@ const BorrowSummaryPage = () => {
               </span>
             </div>
             <p className="text-2xl font-bold text-foreground mt-1">
-              {summary.reduce(
-                (total, item) => total + item.totalQuantityBorrowed,
-                0
-              )}
+              {summary.reduce((total, item) => total + item.totalQuantity, 0)}
             </p>
           </div>
           <div className="rounded-lg border bg-card p-4">
@@ -158,10 +155,8 @@ const BorrowSummaryPage = () => {
             </div>
             <p className="text-2xl font-bold text-foreground mt-1">
               {(
-                summary.reduce(
-                  (total, item) => total + item.totalQuantityBorrowed,
-                  0
-                ) / summary.length
+                summary.reduce((total, item) => total + item.totalQuantity, 0) /
+                summary.length
               ).toFixed(1)}
             </p>
           </div>

@@ -152,10 +152,7 @@ export const baseApi = createApi({
     }),
 
     // Get borrow summary
-    getBorrowSummary: builder.query<
-      ApiResponse<{ summary: BorrowSummary[] }>,
-      void
-    >({
+    getBorrowSummary: builder.query<ApiResponse<BorrowSummary[]>, void>({
       query: () => "/borrow",
       providesTags: ["Borrow"],
     }),

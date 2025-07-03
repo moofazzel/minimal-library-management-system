@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-3 md:px-0 ">
         <div className="flex h-16 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center space-x-4">
@@ -76,7 +76,7 @@ const Navbar = () => {
               variant="ghost"
               size="sm"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 hover:bg-gray-100 text-gray-600 hover:text-black"
+              className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105"
             >
               <Search className="h-4 w-4" />
             </Button>
@@ -85,17 +85,17 @@ const Navbar = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 hover:bg-gray-100 text-gray-600 hover:text-black relative"
+              className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105 relative"
             >
               <Bell className="h-4 w-4" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
             </Button>
 
             {/* User Profile */}
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 hover:bg-gray-100 text-gray-600 hover:text-black"
+              className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105"
             >
               <User className="h-4 w-4" />
             </Button>
@@ -107,7 +107,7 @@ const Navbar = () => {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 hover:bg-gray-100 text-gray-600"
+              className="p-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 hover:scale-105"
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5" />
@@ -130,7 +130,7 @@ const Navbar = () => {
                   className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 />
               </div>
-              <Button className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg">
+              <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-4 py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105">
                 Search
               </Button>
             </div>
@@ -167,7 +167,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100"
+                  className="w-full justify-start bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25"
                 >
                   <Search className="h-4 w-4 mr-2" />
                   Search Books
@@ -175,7 +175,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100"
+                  className="w-full justify-start bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25"
                 >
                   <BookMarked className="h-4 w-4 mr-2" />
                   My Reading List
@@ -183,7 +183,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100"
+                  className="w-full justify-start bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/25"
                 >
                   <Clock className="h-4 w-4 mr-2" />
                   Reading History

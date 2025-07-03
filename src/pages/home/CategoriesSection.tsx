@@ -18,19 +18,19 @@ const CategoriesSection = () => {
       categoryCounts[genre] = (categoryCounts[genre] || 0) + 1;
     });
 
-    // Color mapping for different genres
+    // Color mapping for different genres with gradients
     const colorMap: { [key: string]: string } = {
-      FICTION: "bg-blue-500",
-      "NON-FICTION": "bg-green-500",
-      SCIENCE: "bg-purple-500",
-      HISTORY: "bg-orange-500",
-      TECHNOLOGY: "bg-red-500",
-      BIOGRAPHY: "bg-indigo-500",
-      "SELF-HELP": "bg-pink-500",
-      MYSTERY: "bg-gray-500",
-      ROMANCE: "bg-rose-500",
-      FANTASY: "bg-yellow-500",
-      Unknown: "bg-slate-500",
+      FICTION: "bg-gradient-to-r from-blue-500 to-indigo-600",
+      "NON-FICTION": "bg-gradient-to-r from-emerald-500 to-teal-600",
+      SCIENCE: "bg-gradient-to-r from-purple-500 to-pink-600",
+      HISTORY: "bg-gradient-to-r from-orange-500 to-red-600",
+      TECHNOLOGY: "bg-gradient-to-r from-cyan-500 to-blue-600",
+      BIOGRAPHY: "bg-gradient-to-r from-indigo-500 to-purple-600",
+      "SELF-HELP": "bg-gradient-to-r from-pink-500 to-rose-600",
+      MYSTERY: "bg-gradient-to-r from-gray-500 to-slate-600",
+      ROMANCE: "bg-gradient-to-r from-rose-500 to-pink-600",
+      FANTASY: "bg-gradient-to-r from-yellow-500 to-orange-600",
+      Unknown: "bg-gradient-to-r from-slate-500 to-gray-600",
     };
 
     // Convert to array format
@@ -46,17 +46,17 @@ const CategoriesSection = () => {
   // If no categories found, show a message or fallback
   if (categories.length === 0) {
     return (
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="container mx-auto px-3 sm:px-0">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-4xl font-bold tracking-tight">
-              Explore by <span className="text-primary">Category</span>
+            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+              Explore by <span className="text-blue-600">Category</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Discover books across diverse genres and subjects
             </p>
           </div>
-          <div className="text-center text-muted-foreground">
+          <div className="text-center text-gray-500">
             <p>No books available yet. Add some books to see categories!</p>
           </div>
         </div>
@@ -65,13 +65,13 @@ const CategoriesSection = () => {
   }
 
   return (
-    <section className="py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-3 sm:px-0">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">
-            Explore by <span className="text-primary">Category</span>
+          <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+            Explore by <span className="text-blue-600">Category</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Discover books across diverse genres and subjects
           </p>
         </div>
@@ -81,15 +81,19 @@ const CategoriesSection = () => {
             <Link
               key={index}
               to="/books"
-              className="group p-6 bg-card rounded-xl border hover:border-primary/50 transition-all duration-200 hover:shadow-lg text-center"
+              className="group p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:scale-105 text-center"
             >
               <div
-                className={`w-12 h-12 ${category.color} rounded-lg mx-auto mb-4 flex items-center justify-center`}
+                className={`w-16 h-16 ${category.color} rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300`}
               >
-                <BookOpen className="h-6 w-6 text-white" />
+                <BookOpen className="h-8 w-8 text-white" />
               </div>
-              <h3 className="font-semibold mb-2">{category.name}</h3>
-              <p className="text-sm text-muted-foreground">{category.count}</p>
+              <h3 className="font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+                {category.name}
+              </h3>
+              <p className="text-sm text-gray-600 font-medium">
+                {category.count}
+              </p>
             </Link>
           ))}
         </div>

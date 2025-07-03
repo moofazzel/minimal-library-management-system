@@ -1,26 +1,32 @@
-// Genre enum for type safety
-export enum Genre {
-  FICTION = "FICTION",
-  NON_FICTION = "NON_FICTION",
-  SCIENCE = "SCIENCE",
-  HISTORY = "HISTORY",
-  BIOGRAPHY = "BIOGRAPHY",
-  FANTASY = "FANTASY",
-}
+// Genre const for type safety
+export const Genre = {
+  FICTION: "FICTION",
+  NON_FICTION: "NON_FICTION",
+  SCIENCE: "SCIENCE",
+  HISTORY: "HISTORY",
+  BIOGRAPHY: "BIOGRAPHY",
+  FANTASY: "FANTASY",
+} as const;
 
-// Sort order enum
-export enum SortOrder {
-  ASC = "asc",
-  DESC = "desc",
-}
+export type Genre = (typeof Genre)[keyof typeof Genre];
 
-// Sort field enum
-export enum SortField {
-  CREATED_AT = "createdAt",
-  TITLE = "title",
-  AUTHOR = "author",
-  GENRE = "genre",
-}
+// Sort order const
+export const SortOrder = {
+  ASC: "asc",
+  DESC: "desc",
+} as const;
+
+export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+// Sort field const
+export const SortField = {
+  CREATED_AT: "createdAt",
+  TITLE: "title",
+  AUTHOR: "author",
+  GENRE: "genre",
+} as const;
+
+export type SortField = (typeof SortField)[keyof typeof SortField];
 
 // Book interface with strict typing
 export interface Book {
@@ -74,10 +80,11 @@ export interface CreateBorrowRequest {
 
 // Borrow summary interface
 export interface BorrowSummary {
-  bookId: string;
-  bookTitle: string;
-  isbn: string;
-  totalQuantityBorrowed: number;
+  book: {
+    title: string;
+    isbn: string;
+  };
+  totalQuantity: number;
 }
 
 // API response wrapper
@@ -202,9 +209,10 @@ export const validateBorrowSummary = (
   const sum = summary as Record<string, unknown>;
 
   return (
-    typeof sum.bookId === "string" &&
-    typeof sum.bookTitle === "string" &&
-    typeof sum.isbn === "string" &&
-    typeof sum.totalQuantityBorrowed === "number"
+    sum.book !== null &&
+    typeof sum.book === "object" &&
+    typeof (sum.book as Record<string, unknown>).title === "string" &&
+    typeof (sum.book as Record<string, unknown>).isbn === "string" &&
+    typeof sum.totalQuantity === "number"
   );
 };

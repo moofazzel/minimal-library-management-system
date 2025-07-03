@@ -17,6 +17,7 @@ import BookBorrowModal from "../../components/books/BookBorrowModal";
 import BookCard from "../../components/books/BookCard";
 import BookDeleteModal from "../../components/books/BookDeleteModal";
 import BookEditModal from "../../components/books/BookEditModal";
+import BookSkeleton from "../../components/books/BookSkeleton";
 import BookStats from "../../components/books/BookStats";
 import { Button } from "../../components/ui/Button";
 import { useGetBooksQuery } from "../../redux/api/baseApi";
@@ -77,14 +78,7 @@ const BooksPage = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading books...</p>
-        </div>
-      </div>
-    );
+    return <BookSkeleton />;
   }
 
   if (error) {
@@ -99,7 +93,7 @@ const BooksPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px- py-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
         <div>
@@ -246,9 +240,9 @@ const BooksPage = () => {
 
       {/* Books Table or Grid */}
       {viewMode === "list" ? (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <div className="bg-white rounded-xl shadow-sm border overflow-hidden w-full">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -269,7 +263,7 @@ const BooksPage = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[280px]">
                     Actions
                   </th>
                 </tr>
@@ -322,16 +316,16 @@ const BooksPage = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2 w-full">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openBorrowModal(book)}
                           disabled={!book.available || book.copies === 0}
-                          className={`p-2 rounded-lg transition-all duration-300 ${
+                          className={`flex-1 py-2 px-3 rounded-lg transition-all duration-300 ${
                             !book.available || book.copies === 0
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                              : "hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 text-green-600 hover:scale-105"
+                              : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white hover:shadow-lg hover:shadow-green-500/25 hover:scale-105"
                           }`}
                           title={
                             !book.available || book.copies === 0
@@ -339,25 +333,28 @@ const BooksPage = () => {
                               : "Borrow Book"
                           }
                         >
-                          <BookOpen className="h-4 w-4" />
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          <span className="text-xs font-medium">Borrow</span>
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openEditModal(book)}
-                          className="p-2 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 text-blue-600 rounded-lg transition-all duration-300 hover:scale-105"
+                          className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105"
                           title="Edit Book"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-4 w-4 mr-1" />
+                          <span className="text-xs font-medium">Edit</span>
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openDeleteModal(book)}
-                          className="p-2 hover:bg-gradient-to-r hover:from-red-100 hover:to-pink-100 text-red-600 rounded-lg transition-all duration-300 hover:scale-105"
+                          className="flex-1 py-2 px-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25 hover:scale-105"
                           title="Delete Book"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          <span className="text-xs font-medium">Delete</span>
                         </Button>
                       </div>
                     </td>

@@ -39,25 +39,37 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-card">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="container mx-auto px-3 sm:px-0">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
+            const gradients = [
+              "from-blue-500 to-indigo-600",
+              "from-purple-500 to-pink-600",
+              "from-emerald-500 to-teal-600",
+              "from-orange-500 to-red-600",
+            ];
+            const gradient = gradients[index % gradients.length];
+
             return (
-              <div key={index} className="text-center space-y-3">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 text-primary rounded-full">
-                  <Icon className="h-8 w-8" />
+              <div key={index} className="text-center space-y-4 group">
+                <div
+                  className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r ${gradient} text-white rounded-2xl shadow-lg shadow-${
+                    gradient.split("-")[1]
+                  }-500/25 group-hover:scale-110 transition-all duration-300`}
+                >
+                  <Icon className="h-10 w-10" />
                 </div>
-                <div className="space-y-1">
-                  <div className="text-3xl font-bold text-foreground">
+                <div className="space-y-2">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                     {stat.loading ? (
-                      <div className="h-8 bg-muted animate-pulse rounded"></div>
+                      <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse rounded-lg"></div>
                     ) : (
                       stat.value
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-600">
                     {stat.label}
                   </div>
                 </div>
