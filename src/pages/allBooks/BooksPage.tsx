@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import {
   BarChart3,
   BookOpen,
@@ -212,7 +213,7 @@ const BooksPage = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowStats(!showStats)}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
             >
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm font-medium">
@@ -221,12 +222,17 @@ const BooksPage = () => {
             </Button>
 
             {/* View Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-1">
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("grid")}
-                className="px-3 py-1.5 rounded-md transition-all duration-200"
+                className={cn(
+                  "px-3 py-1.5 rounded-md transition-all duration-200",
+                  viewMode === "grid"
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600"
+                    : "!bg-gray-300 text-gray-600 hover:bg-gray-200"
+                )}
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -234,7 +240,12 @@ const BooksPage = () => {
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("list")}
-                className="px-3 py-1.5 rounded-md transition-all duration-200"
+                className={cn(
+                  "px-3 py-1.5 rounded-md transition-all duration-200",
+                  viewMode === "list"
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600"
+                    : "!bg-gray-300 text-gray-600 hover:bg-gray-200"
+                )}
               >
                 <ListIcon className="h-4 w-4" />
               </Button>

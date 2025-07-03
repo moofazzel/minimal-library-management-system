@@ -14,6 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
+        // target: "http://localhost:5000",
         target: "https://phl-2-assignment-03-5vy5.vercel.app",
         changeOrigin: true,
         secure: true,

@@ -9,10 +9,10 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { startTransition, useEffect, useOptimistic, useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useCreateBookMutation } from "../../redux/api/baseApi";
+import { useCreateBookMutation, useGetBooksQuery } from "../../redux/api/baseApi";
 import { Genre, type Book } from "../../types";
 import { Button } from "../ui/Button";
 
@@ -59,6 +59,7 @@ type CreateBookFormData = z.infer<typeof createBookSchema>;
 
 const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
   const [createBook, { isLoading }] = useCreateBookMutation();
+  const { refetch } = useGetBooksQuery({ limit: 1000 });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<CreateBookFormData>({
@@ -74,8 +75,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
   // Optimistic state for the new book
   const [optimisticBook, addOptimisticBook] = useOptimistic(
     null as Book | null,
-    (currentBook, newBookData: CreateBookFormData) => {
-      console.log("🚀 ~ currentBook:", currentBook);
+    (_currentBook, newBookData: CreateBookFormData) => {
       // Create a temporary book object for optimistic display
       return {
         _id: `temp-${Date.now()}`,
@@ -86,22 +86,6 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
       } as Book;
     }
   );
-
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      setFormData({
-        title: "",
-        author: "",
-        genre: Genre.FICTION,
-        isbn: "",
-        description: "",
-        copies: 1,
-        available: true,
-      });
-      setFieldErrors({});
-    }
-  }, [isOpen]);
 
   const validateField = (
     field: keyof CreateBookFormData,
@@ -139,13 +123,15 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
       // Validate entire form
       const validatedData = createBookSchema.parse(formData);
 
-      // Add optimistic update
-      addOptimisticBook(validatedData);
-
-      // Start transition for the actual API call
+      // Start transition for optimistic update and API call
       startTransition(async () => {
+        // Add optimistic update
+        addOptimisticBook(validatedData);
         try {
           await createBook(validatedData).unwrap();
+
+          // Refetch books to update the list
+          await refetch();
 
           // Success toast
           toast.success("Book added successfully!", {
@@ -194,6 +180,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     if (!isLoading) {
+      // Reset form data
       setFormData({
         title: "",
         author: "",
