@@ -147,14 +147,14 @@ const BookShowcaseSlider = ({
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link
-                  to={`/books/${currentBook.id}`}
+                  to={`/books/${currentBook._id}`}
                   className="inline-flex items-center justify-center px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
                 >
                   <BookOpen className="h-5 w-5 mr-2" />
                   Read More
                 </Link>
                 <Link
-                  to={`/borrow/${currentBook.id}`}
+                  to={`/books/${currentBook._id}`}
                   className="inline-flex items-center justify-center px-8 py-4 border border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
                   Borrow Now

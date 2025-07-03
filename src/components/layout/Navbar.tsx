@@ -3,7 +3,6 @@ import {
   Bell,
   BookMarked,
   BookOpen,
-  BookText,
   Clock,
   Home,
   Menu,
@@ -23,7 +22,6 @@ const Navbar = () => {
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     { path: "/books", label: "All Books", icon: BookOpen },
-    { path: "/book-demo", label: "Book Demo", icon: BookText },
     { path: "/borrow-summary", label: "Borrow Summary", icon: BarChart3 },
   ];
 

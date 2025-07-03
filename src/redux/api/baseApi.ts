@@ -6,9 +6,12 @@ import type {
 import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type {
+  ApiErrorResponse,
   ApiResponse,
   Book,
+  BookQueryParams,
   Borrow,
+  BorrowQueryParams,
   BorrowSummary,
   CreateBookRequest,
   CreateBorrowRequest,
@@ -18,16 +21,13 @@ import type {
 
 const baseUrl = "https://phl-2-assignment-03-5vy5.vercel.app/api/";
 
-// Custom error type for better error handling
+// Simple error type
 export interface ApiError {
   status: number;
-  data: {
-    message: string;
-    success: false;
-  };
+  data: ApiErrorResponse;
 }
 
-// Enhanced base query with better error handling
+// Simple base query
 const baseQuery: BaseQueryFn<
   string | FetchArgs,
   unknown,
@@ -36,7 +36,6 @@ const baseQuery: BaseQueryFn<
   const result = await fetchBaseQuery({ baseUrl })(args, api, extraOptions);
 
   if (result.error) {
-    // Transform fetch errors into consistent format
     const error: ApiError = {
       status:
         "status" in result.error && typeof result.error.status === "number"
@@ -64,14 +63,11 @@ export const baseApi = createApi({
   baseQuery,
   tagTypes: ["Book", "Borrow"],
   endpoints: (builder) => ({
-    // Get all books with pagination support
-    getBooks: builder.query<
-      PaginatedResponse<Book>,
-      { page?: number; limit?: number }
-    >({
-      query: ({ page = 1, limit = 10 }) => ({
+    // Get all books
+    getBooks: builder.query<PaginatedResponse<Book>, BookQueryParams>({
+      query: (params) => ({
         url: "/books",
-        params: { page, limit },
+        params,
       }),
       providesTags: ["Book"],
     }),
@@ -115,13 +111,10 @@ export const baseApi = createApi({
     }),
 
     // Get all borrows
-    getBorrows: builder.query<
-      PaginatedResponse<Borrow>,
-      { page?: number; limit?: number }
-    >({
-      query: ({ page = 1, limit = 10 }) => ({
+    getBorrows: builder.query<PaginatedResponse<Borrow>, BorrowQueryParams>({
+      query: (params) => ({
         url: "/borrows",
-        params: { page, limit },
+        params,
       }),
       providesTags: ["Borrow"],
     }),
@@ -129,7 +122,7 @@ export const baseApi = createApi({
     // Create a new borrow
     createBorrow: builder.mutation<ApiResponse<Borrow>, CreateBorrowRequest>({
       query: (borrowData) => ({
-        url: "/borrows",
+        url: "/borrow",
         method: "POST",
         body: borrowData,
       }),
@@ -141,7 +134,7 @@ export const baseApi = createApi({
       ApiResponse<{ summary: BorrowSummary[] }>,
       void
     >({
-      query: () => "/borrows/summary",
+      query: () => "/borrow",
       providesTags: ["Borrow"],
     }),
   }),
