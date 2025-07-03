@@ -97,7 +97,7 @@ export const baseApi = createApi({
     // Get a single book by ID
     getBookById: builder.query<ApiResponse<Book>, string>({
       query: (id) => `/books/${id}`,
-      providesTags: (result, error, id) => [{ type: "Book", id }],
+      providesTags: (_result, _error, id) => [{ type: "Book", id }],
     }),
 
     // Create a new book
@@ -117,7 +117,7 @@ export const baseApi = createApi({
         method: "PUT",
         body: bookData,
       }),
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (_result, _error, { id }) => [
         { type: "Book", id },
         "Book",
       ],

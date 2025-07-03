@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Book, CreateBookRequest } from "../../types";
+import { Genre, type Book, type CreateBookRequest } from "../../types";
 import { Button } from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { Input } from "../ui/Input";
@@ -21,7 +21,7 @@ const BookForm = ({
   const [formData, setFormData] = useState<CreateBookRequest>({
     title: "",
     author: "",
-    genre: "",
+    genre: Genre.FICTION,
     isbn: "",
     description: "",
     copies: 1,

@@ -11,7 +11,8 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
+import { toast } from "sonner";
 import BookAddModal from "../../components/books/BookAddModal";
 import BookBorrowModal from "../../components/books/BookBorrowModal";
 import BookCard from "../../components/books/BookCard";
@@ -20,7 +21,10 @@ import BookEditModal from "../../components/books/BookEditModal";
 import BookSkeleton from "../../components/books/BookSkeleton";
 import BookStats from "../../components/books/BookStats";
 import { Button } from "../../components/ui/Button";
-import { useGetBooksQuery } from "../../redux/api/baseApi";
+import {
+  useDeleteBookMutation,
+  useGetBooksQuery,
+} from "../../redux/api/baseApi";
 import type { Book } from "../../types";
 
 const BooksPage = () => {
@@ -29,6 +33,8 @@ const BooksPage = () => {
     isLoading,
     error,
   } = useGetBooksQuery({ limit: 1000 });
+
+  const [deleteBook] = useDeleteBookMutation();
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -46,8 +52,21 @@ const BooksPage = () => {
 
   const books = booksData?.data || [];
 
+  // Optimistic state for books
+  const [optimisticBooks, addOptimisticBook] = useOptimistic(
+    books,
+    (currentBooks, optimisticUpdate: { type: "delete"; bookId: string }) => {
+      if (optimisticUpdate.type === "delete") {
+        return currentBooks.filter(
+          (book) => book._id !== optimisticUpdate.bookId
+        );
+      }
+      return currentBooks;
+    }
+  );
+
   // Filter books based on search and genre
-  const filteredBooks = books.filter((book) => {
+  const filteredBooks = optimisticBooks.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,6 +90,33 @@ const BooksPage = () => {
     setIsDeleteModalOpen(true);
   };
 
+  // Handle optimistic deletion
+  const handleOptimisticDelete = async (bookId: string, bookTitle: string) => {
+    // Add optimistic update
+    addOptimisticBook({ type: "delete", bookId });
+
+    // Start transition for the actual API call
+    startTransition(async () => {
+      try {
+        await deleteBook(bookId).unwrap();
+
+        // Success toast
+        toast.success("Book deleted successfully!", {
+          description: `"${bookTitle}" has been permanently removed from the library.`,
+          duration: 4000,
+        });
+      } catch (error) {
+        // Revert optimistic update on error
+        console.error("Failed to delete book:", error);
+        toast.error("Failed to delete book", {
+          description:
+            "An error occurred while deleting the book. Please try again.",
+          duration: 5000,
+        });
+      }
+    });
+  };
+
   // Open borrow modal
   const openBorrowModal = (book: Book) => {
     setSelectedBook(book);
@@ -84,134 +130,70 @@ const BooksPage = () => {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-600">
-          <XCircle className="h-12 w-12 mx-auto mb-4" />
-          <p>Error loading books. Please try again.</p>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error Loading Books
+          </h2>
+          <p className="text-gray-600">
+            An error occurred while loading the books. Please try again.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px- py-8">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Book Management 🛠️
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Library Books
           </h1>
-          <p className="text-gray-600 mt-2">
-            Manage your library's book collection
+          <p className="text-gray-600">
+            Manage and explore your library collection
           </p>
         </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add Book
+        </Button>
       </div>
 
-      {/* Sticky Toggle Buttons */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 -mx-4 px-4 py-4 mb-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Statistics Toggle */}
-            <Button
-              variant={showStats ? "default" : "ghost"}
-              onClick={() => setShowStats(!showStats)}
-              className={`relative overflow-hidden transition-all duration-300 ${
-                showStats
-                  ? "bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white shadow-lg shadow-violet-500/25"
-                  : "!bg-gray-400 hover:bg-gradient-to-r hover:from-violet-50 hover:to-fuchsia-50 text-gray-600"
-              }`}
-              title="Toggle Statistics"
-            >
-              <div
-                className={`absolute inset-0 bg-gradient-to-r from-violet-400 to-fuchsia-500 opacity-0 transition-opacity duration-300 ${
-                  showStats ? "opacity-100" : ""
-                }`}
-              />
-              <BarChart3 className="h-5 w-5 relative z-10" />
-              <span className="ml-2 relative z-10 font-medium">Stats</span>
-            </Button>
-
-            {/* View Mode Toggles */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-              <Button
-                variant="ghost"
-                onClick={() => setViewMode("list")}
-                className={`relative overflow-hidden transition-all duration-300 ${
-                  viewMode === "list"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
-                    : "!bg-gray-400 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50 text-gray-600"
-                }`}
-                title="List View"
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 transition-opacity duration-300 ${
-                    viewMode === "list" ? "opacity-100" : ""
-                  }`}
-                />
-                <ListIcon className="h-5 w-5 relative z-10" />
-                <span className="ml-2 relative z-10 font-medium">List</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setViewMode("grid")}
-                className={`relative overflow-hidden transition-all duration-300 ${
-                  viewMode === "grid"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
-                    : "!bg-gray-400 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50 text-gray-600"
-                }`}
-                title="Grid View"
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 transition-opacity duration-300 ${
-                    viewMode === "grid" ? "opacity-100" : ""
-                  }`}
-                />
-                <LayoutGrid className="h-5 w-5 relative z-10" />
-                <span className="ml-2 relative z-10 font-medium">Grid</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Add Book Button */}
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="relative overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105 group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <Plus className="h-5 w-5 relative z-10 mr-2" />
-            <span className="relative z-10">Add New Book</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Statistics */}
+      {/* Stats */}
       {showStats && (
         <div className="mb-8">
-          <BookStats books={books} />
+          <BookStats books={optimisticBooks} />
         </div>
       )}
 
-      {/* Search and Filter */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
+      {/* Controls */}
+      <div className="bg-white rounded-xl shadow-md border p-6 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 flex-1">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by title, author, or ISBN..."
+                placeholder="Search books..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
-          </div>
-          <div className="md:w-48">
+
+            {/* Genre Filter */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
                 value={filterGenre}
                 onChange={(e) => setFilterGenre(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
               >
                 <option value="">All Genres</option>
                 {genres.map((genre) => (
@@ -222,94 +204,107 @@ const BooksPage = () => {
               </select>
             </div>
           </div>
+
+          {/* View Toggle and Stats Toggle */}
+          <div className="flex items-center space-x-3">
+            {/* Stats Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowStats(!showStats)}
+              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {showStats ? "Hide" : "Show"} Stats
+              </span>
+            </Button>
+
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="px-3 py-1.5 rounded-md transition-all duration-200"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="px-3 py-1.5 rounded-md transition-all duration-200"
+              >
+                <ListIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Results Summary */}
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          Showing {filteredBooks.length} of {books.length} books
-        </p>
-        {searchTerm && (
-          <p className="text-sm text-gray-500">
-            Search results for: "
-            <span className="font-medium">{searchTerm}</span>"
-          </p>
-        )}
-      </div>
-
-      {/* Books Table or Grid */}
+      {/* Books List */}
       {viewMode === "list" ? (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden w-full">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-md border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Title & Description
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Book
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Author
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Genre
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     ISBN
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Copies
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[280px]">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-200">
                 {filteredBooks.map((book) => (
                   <tr
                     key={book._id}
-                    className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200"
+                    className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <div className="max-w-xs">
-                        <div className="text-sm font-semibold text-gray-900 mb-1">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
                           {book.title}
                         </div>
-                        <div className="text-xs text-gray-500 leading-relaxed">
-                          {book.description.length > 60
-                            ? `${book.description.substring(0, 60)}...`
-                            : book.description}
+                        <div className="text-sm text-gray-500">
+                          by {book.author}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {book.author}
-                    </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-violet-100 to-purple-100 text-violet-800 border border-violet-200">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {book.genre}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 font-mono bg-gray-50 px-2 py-1 rounded">
+                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">
                       {book.isbn}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-semibold">
-                      <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-md">
-                        {book.copies} {book.copies === 1 ? "copy" : "copies"}
-                      </span>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {book.copies}
                     </td>
                     <td className="px-6 py-4">
                       {book.available && book.copies > 0 ? (
-                        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Available
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                           <XCircle className="h-3 w-3 mr-1" />
                           Unavailable
                         </span>
@@ -363,6 +358,7 @@ const BooksPage = () => {
               </tbody>
             </table>
           </div>
+
           {filteredBooks.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -414,6 +410,7 @@ const BooksPage = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         bookId={bookToDelete?._id || ""}
         bookTitle={bookToDelete?.title || ""}
+        onConfirm={handleOptimisticDelete}
       />
 
       <BookBorrowModal

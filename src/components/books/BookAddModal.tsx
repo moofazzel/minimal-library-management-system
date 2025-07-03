@@ -9,11 +9,11 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useCreateBookMutation } from "../../redux/api/baseApi";
-import { Genre } from "../../types";
+import { Genre, type Book } from "../../types";
 import { Button } from "../ui/Button";
 
 interface BookAddModalProps {
@@ -71,6 +71,38 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
     available: true,
   });
 
+  // Optimistic state for the new book
+  const [optimisticBook, addOptimisticBook] = useOptimistic(
+    null as Book | null,
+    (currentBook, newBookData: CreateBookFormData) => {
+      console.log("🚀 ~ currentBook:", currentBook);
+      // Create a temporary book object for optimistic display
+      return {
+        _id: `temp-${Date.now()}`,
+        ...newBookData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        image: undefined,
+      } as Book;
+    }
+  );
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        title: "",
+        author: "",
+        genre: Genre.FICTION,
+        isbn: "",
+        description: "",
+        copies: 1,
+        available: true,
+      });
+      setFieldErrors({});
+    }
+  }, [isOpen]);
+
   const validateField = (
     field: keyof CreateBookFormData,
     value: string | number | boolean
@@ -107,25 +139,41 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
       // Validate entire form
       const validatedData = createBookSchema.parse(formData);
 
-      await createBook(validatedData).unwrap();
+      // Add optimistic update
+      addOptimisticBook(validatedData);
 
-      // Success toast
-      toast.success("Book added successfully!", {
-        description: `${validatedData.title} by ${validatedData.author} has been added to the library.`,
-        duration: 4000,
-      });
+      // Start transition for the actual API call
+      startTransition(async () => {
+        try {
+          await createBook(validatedData).unwrap();
 
-      // Reset form
-      setFormData({
-        title: "",
-        author: "",
-        genre: Genre.FICTION,
-        isbn: "",
-        description: "",
-        copies: 1,
-        available: true,
+          // Success toast
+          toast.success("Book added successfully!", {
+            description: `${validatedData.title} by ${validatedData.author} has been added to the library.`,
+            duration: 4000,
+          });
+
+          // Reset form
+          setFormData({
+            title: "",
+            author: "",
+            genre: Genre.FICTION,
+            isbn: "",
+            description: "",
+            copies: 1,
+            available: true,
+          });
+          onClose();
+        } catch (error) {
+          // Revert optimistic update on error
+          console.error("Failed to create book:", error);
+          toast.error("Failed to add book", {
+            description:
+              "An error occurred while adding the book. Please try again.",
+            duration: 5000,
+          });
+        }
       });
-      onClose();
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Validation errors
@@ -138,14 +186,6 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
 
         toast.error("Validation failed", {
           description: "Please check the form fields and try again.",
-          duration: 5000,
-        });
-      } else {
-        // API errors
-        console.error("Failed to create book:", error);
-        toast.error("Failed to add book", {
-          description:
-            "An error occurred while adding the book. Please try again.",
           duration: 5000,
         });
       }
@@ -198,6 +238,47 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
             <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
+
+        {/* Optimistic Preview */}
+        {optimisticBook && (
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium text-blue-700">
+                Adding book to library...
+              </span>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-blue-200">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900">
+                  {optimisticBook.title}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <User className="h-4 w-4 text-purple-600" />
+                <span className="text-sm text-gray-600">
+                  by {optimisticBook.author}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <Hash className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600 font-mono">
+                  {optimisticBook.isbn}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <Copy className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-gray-600">
+                  Copies:{" "}
+                  <span className="font-semibold text-green-700">
+                    {optimisticBook.copies}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form

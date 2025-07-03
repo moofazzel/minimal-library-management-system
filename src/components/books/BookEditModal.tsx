@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useUpdateBookMutation } from "../../redux/api/baseApi";
@@ -80,6 +80,27 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
     available: true,
   });
 
+  // Optimistic state for the book
+  const [optimisticBook, addOptimisticBook] = useOptimistic(
+    book,
+    (currentBook, optimisticUpdate: UpdateBookFormData) => {
+      if (!currentBook) return currentBook;
+
+      return {
+        ...currentBook,
+        title: optimisticUpdate.title,
+        author: optimisticUpdate.author,
+        genre: optimisticUpdate.genre,
+        isbn: optimisticUpdate.isbn,
+        description: optimisticUpdate.description,
+        copies: optimisticUpdate.copies,
+        available: optimisticUpdate.available,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+  );
+
+  // Update form data when book changes
   useEffect(() => {
     if (book) {
       setFormData({
@@ -95,6 +116,13 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
       setFieldErrors({});
     }
   }, [book]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFieldErrors({});
+    }
+  }, [isOpen]);
 
   const validateField = (
     field: keyof UpdateBookFormData,
@@ -126,21 +154,39 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!book) return;
+
     setFieldErrors({});
 
     try {
-      // Validate form data
+      // Validate entire form
       const validatedData = updateBookSchema.parse(formData);
 
-      await updateBook(validatedData).unwrap();
+      // Add optimistic update
+      addOptimisticBook(validatedData);
 
-      // Success toast
-      toast.success("Book updated successfully!", {
-        description: `${validatedData.title} by ${validatedData.author} has been updated.`,
-        duration: 4000,
+      // Start transition for the actual API call
+      startTransition(async () => {
+        try {
+          await updateBook(validatedData).unwrap();
+
+          // Success toast
+          toast.success("Book updated successfully!", {
+            description: `${validatedData.title} by ${validatedData.author} has been updated.`,
+            duration: 4000,
+          });
+
+          onClose();
+        } catch (error) {
+          // Revert optimistic update on error
+          console.error("Failed to update book:", error);
+          toast.error("Failed to update book", {
+            description:
+              "An error occurred while updating the book. Please try again.",
+            duration: 5000,
+          });
+        }
       });
-
-      onClose();
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Validation errors
@@ -155,14 +201,6 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
           description: "Please check the form fields and try again.",
           duration: 5000,
         });
-      } else {
-        // API errors
-        console.error("Failed to update book:", error);
-        toast.error("Failed to update book", {
-          description:
-            "An error occurred while updating the book. Please try again.",
-          duration: 5000,
-        });
       }
     }
   };
@@ -175,6 +213,9 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
   };
 
   if (!isOpen || !book) return null;
+
+  // Use optimistic book for display
+  const displayBook = optimisticBook || book;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto modal-scroll">
@@ -204,6 +245,47 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
             <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
+
+        {/* Optimistic Preview */}
+        {optimisticBook !== book && (
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium text-blue-700">
+                Updating book...
+              </span>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-blue-200">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900">
+                  {displayBook.title}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <User className="h-4 w-4 text-purple-600" />
+                <span className="text-sm text-gray-600">
+                  by {displayBook.author}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <Hash className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600 font-mono">
+                  {displayBook.isbn}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-1">
+                <Copy className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-gray-600">
+                  Copies:{" "}
+                  <span className="font-semibold text-green-700">
+                    {displayBook.copies}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form
