@@ -43,6 +43,7 @@ A modern, responsive library management system built with React, TypeScript, and
 - **RTK Query**: Efficient API state management with caching
 - **Form Validation**: Client-side validation using Zod schemas
 - **Error Handling**: Comprehensive error handling and user feedback
+- **React 19 useOptimistic**: Optimistic UI updates for immediate feedback
 - **Optimistic Updates**: Immediate UI feedback for better UX
 
 ## 🛠️ Technology Stack
@@ -161,6 +162,16 @@ Built with Redux Toolkit and RTK Query for:
 - **Automatic background updates**
 - **Optimistic updates**
 - **Error handling**
+
+### React 19 Optimistic Updates
+
+The application leverages React 19's `useOptimistic` hook for enhanced user experience:
+
+- **Immediate UI Feedback**: Users see changes instantly without waiting for API responses
+- **Book Deletion**: Optimistic removal of books from the UI while API call processes
+- **Error Recovery**: Automatic rollback of optimistic updates if API calls fail
+- **Smooth Transitions**: Seamless user experience with `startTransition` for non-blocking updates
+- **Performance**: Reduced perceived latency and improved responsiveness
 
 ## 🔒 Security Features
 
