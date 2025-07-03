@@ -4,7 +4,7 @@ A modern, responsive library management system built with React, TypeScript, and
 
 ## 🌐 Live Demo
 
-**Frontend Application:** [https://phl-2-assignment-03-5vy5.vercel.app](https://phl-2-assignment-03-5vy5.vercel.app)
+**Frontend Application:** [https://minimal-library-management-system.vercel.app/](https://minimal-library-management-system.vercel.app/)
 
 ## ✨ Features
 
