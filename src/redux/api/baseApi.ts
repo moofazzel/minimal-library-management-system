@@ -5,6 +5,7 @@ import type {
 } from "@reduxjs/toolkit/query";
 import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { API_BASE_URL } from "../../config/api";
 import type {
   ApiErrorResponse,
   ApiResponse,
@@ -19,7 +20,8 @@ import type {
   UpdateBookRequest,
 } from "../../types";
 
-const baseUrl = "/api/";
+const baseUrl = API_BASE_URL;
+console.log("🔍 API Base URL:", baseUrl);
 
 // Simple error type
 export interface ApiError {
