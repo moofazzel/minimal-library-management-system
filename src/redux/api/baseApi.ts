@@ -19,7 +19,7 @@ import type {
   UpdateBookRequest,
 } from "../../types";
 
-const baseUrl = "https://phl-2-assignment-03-5vy5.vercel.app/api/";
+const baseUrl = "/api/";
 
 // Simple error type
 export interface ApiError {
@@ -27,35 +27,57 @@ export interface ApiError {
   data: ApiErrorResponse;
 }
 
-// Simple base query
+// Enhanced base query with better error handling
 const baseQuery: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError | ApiError
 > = async (args, api, extraOptions) => {
-  const result = await fetchBaseQuery({ baseUrl })(args, api, extraOptions);
+  try {
+    const result = await fetchBaseQuery({
+      baseUrl,
+      prepareHeaders: (headers) => {
+        headers.set("Content-Type", "application/json");
+        headers.set("Accept", "application/json");
+        return headers;
+      },
+    })(args, api, extraOptions);
 
-  if (result.error) {
-    const error: ApiError = {
-      status:
-        "status" in result.error && typeof result.error.status === "number"
-          ? result.error.status
-          : 500,
-      data: {
-        message:
-          "data" in result.error &&
-          typeof result.error.data === "object" &&
-          result.error.data
-            ? (result.error.data as { message?: string }).message ||
-              "An error occurred"
-            : "Network error",
-        success: false,
+    if (result.error) {
+      console.error("API Error:", result.error);
+
+      const error: ApiError = {
+        status:
+          "status" in result.error && typeof result.error.status === "number"
+            ? result.error.status
+            : 500,
+        data: {
+          message:
+            "data" in result.error &&
+            typeof result.error.data === "object" &&
+            result.error.data
+              ? (result.error.data as { message?: string }).message ||
+                "An error occurred"
+              : "Network error",
+          success: false,
+        },
+      };
+      return { error };
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Network Error:", error);
+    return {
+      error: {
+        status: 500,
+        data: {
+          message: "Network error - Unable to connect to the server",
+          success: false,
+        },
       },
     };
-    return { error };
   }
-
-  return result;
 };
 
 export const baseApi = createApi({
