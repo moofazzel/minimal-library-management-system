@@ -34,17 +34,30 @@ const baseQuery: BaseQueryFn<
   FetchBaseQueryError | ApiError
 > = async (args, api, extraOptions) => {
   try {
+    console.log("🔍 API Request Details:", {
+      url: typeof args === "string" ? args : args.url,
+      method: typeof args === "string" ? "GET" : args.method || "GET",
+      body: typeof args === "string" ? undefined : args.body,
+      headers: typeof args === "string" ? undefined : args.headers,
+    });
+
     const result = await fetchBaseQuery({
       baseUrl,
       prepareHeaders: (headers) => {
         headers.set("Content-Type", "application/json");
         headers.set("Accept", "application/json");
+        console.log(
+          "🔍 Request Headers:",
+          Object.fromEntries(headers.entries())
+        );
         return headers;
       },
     })(args, api, extraOptions);
 
     if (result.error) {
-      console.error("API Error:", result.error);
+      console.error("🔍 API Error Response:", result.error);
+      console.error("🔍 Error Status:", result.error.status);
+      console.error("🔍 Error Data:", result.error.data);
 
       const error: ApiError = {
         status:

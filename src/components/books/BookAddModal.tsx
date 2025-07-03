@@ -9,11 +9,11 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { startTransition, useOptimistic, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useCreateBookMutation, useGetBooksQuery } from "../../redux/api/baseApi";
-import { Genre, type Book } from "../../types";
+import { useCreateBookMutation } from "../../redux/api/baseApi";
+import { Genre } from "../../types";
 import { Button } from "../ui/Button";
 
 interface BookAddModalProps {
@@ -59,7 +59,6 @@ type CreateBookFormData = z.infer<typeof createBookSchema>;
 
 const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
   const [createBook, { isLoading }] = useCreateBookMutation();
-  const { refetch } = useGetBooksQuery({ limit: 1000 });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<CreateBookFormData>({
@@ -71,21 +70,6 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
     copies: 1,
     available: true,
   });
-
-  // Optimistic state for the new book
-  const [optimisticBook, addOptimisticBook] = useOptimistic(
-    null as Book | null,
-    (_currentBook, newBookData: CreateBookFormData) => {
-      // Create a temporary book object for optimistic display
-      return {
-        _id: `temp-${Date.now()}`,
-        ...newBookData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        image: undefined,
-      } as Book;
-    }
-  );
 
   const validateField = (
     field: keyof CreateBookFormData,
@@ -123,43 +107,37 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
       // Validate entire form
       const validatedData = createBookSchema.parse(formData);
 
-      // Start transition for optimistic update and API call
-      startTransition(async () => {
-        // Add optimistic update
-        addOptimisticBook(validatedData);
-        try {
-          await createBook(validatedData).unwrap();
+      try {
+        console.log("Sending book data:", validatedData);
+        const result = await createBook(validatedData).unwrap();
+        console.log("Book created successfully:", result);
 
-          // Refetch books to update the list
-          await refetch();
+        // Success toast
+        toast.success("Book added successfully!", {
+          description: `${validatedData.title} by ${validatedData.author} has been added to the library.`,
+          duration: 4000,
+        });
 
-          // Success toast
-          toast.success("Book added successfully!", {
-            description: `${validatedData.title} by ${validatedData.author} has been added to the library.`,
-            duration: 4000,
-          });
-
-          // Reset form
-          setFormData({
-            title: "",
-            author: "",
-            genre: Genre.FICTION,
-            isbn: "",
-            description: "",
-            copies: 1,
-            available: true,
-          });
-          onClose();
-        } catch (error) {
-          // Revert optimistic update on error
-          console.error("Failed to create book:", error);
-          toast.error("Failed to add book", {
-            description:
-              "An error occurred while adding the book. Please try again.",
-            duration: 5000,
-          });
-        }
-      });
+        // Reset form
+        setFormData({
+          title: "",
+          author: "",
+          genre: Genre.FICTION,
+          isbn: "",
+          description: "",
+          copies: 1,
+          available: true,
+        });
+        onClose();
+      } catch (error) {
+        console.error("Failed to create book:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
+        toast.error("Failed to add book", {
+          description:
+            "An error occurred while adding the book. Please try again.",
+          duration: 5000,
+        });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Validation errors
@@ -226,47 +204,6 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
           </Button>
         </div>
 
-        {/* Optimistic Preview */}
-        {optimisticBook && (
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span className="text-sm font-medium text-blue-700">
-                Adding book to library...
-              </span>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-blue-200">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-gray-900">
-                  {optimisticBook.title}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 mt-1">
-                <User className="h-4 w-4 text-purple-600" />
-                <span className="text-sm text-gray-600">
-                  by {optimisticBook.author}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 mt-1">
-                <Hash className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600 font-mono">
-                  {optimisticBook.isbn}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 mt-1">
-                <Copy className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-gray-600">
-                  Copies:{" "}
-                  <span className="font-semibold text-green-700">
-                    {optimisticBook.copies}
-                  </span>
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Form */}
         <form
           onSubmit={handleSubmit}
@@ -279,6 +216,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
             </label>
             <input
               type="text"
+              name="title"
               required
               value={formData.title}
               onChange={(e) => handleFieldChange("title", e.target.value)}
@@ -289,6 +227,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               }`}
               placeholder="Enter book title"
               disabled={isLoading}
+              autoComplete="off"
             />
             {fieldErrors.title && (
               <p className="text-xs text-red-600 mt-1">{fieldErrors.title}</p>
@@ -302,6 +241,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
             </label>
             <input
               type="text"
+              name="author"
               required
               value={formData.author}
               onChange={(e) => handleFieldChange("author", e.target.value)}
@@ -312,6 +252,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               }`}
               placeholder="Enter author name"
               disabled={isLoading}
+              autoComplete="off"
             />
             {fieldErrors.author && (
               <p className="text-xs text-red-600 mt-1">{fieldErrors.author}</p>
@@ -324,6 +265,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               Genre *
             </label>
             <select
+              name="genre"
               required
               value={formData.genre}
               onChange={(e) =>
@@ -355,6 +297,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
             </label>
             <input
               type="text"
+              name="isbn"
               required
               value={formData.isbn}
               onChange={(e) => handleFieldChange("isbn", e.target.value)}
@@ -365,6 +308,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               }`}
               placeholder="Enter ISBN number (e.g., 9780743273565)"
               disabled={isLoading}
+              autoComplete="off"
             />
             {fieldErrors.isbn && (
               <p className="text-xs text-red-600 mt-1">{fieldErrors.isbn}</p>
@@ -377,6 +321,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               Description
             </label>
             <textarea
+              name="description"
               value={formData.description}
               onChange={(e) => handleFieldChange("description", e.target.value)}
               rows={3}
@@ -387,6 +332,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               }`}
               placeholder="Enter book description (optional)"
               disabled={isLoading}
+              autoComplete="off"
             />
             {fieldErrors.description && (
               <p className="text-xs text-red-600 mt-1">
@@ -402,6 +348,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
             </label>
             <input
               type="number"
+              name="copies"
               min="1"
               max="100"
               required
@@ -416,6 +363,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
               }`}
               placeholder="Enter number of copies"
               disabled={isLoading}
+              autoComplete="off"
             />
             {fieldErrors.copies && (
               <p className="text-xs text-red-600 mt-1">{fieldErrors.copies}</p>
@@ -425,6 +373,7 @@ const BookAddModal: React.FC<BookAddModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
             <input
               type="checkbox"
+              name="available"
               id="available"
               checked={formData.available}
               onChange={(e) => handleFieldChange("available", e.target.checked)}

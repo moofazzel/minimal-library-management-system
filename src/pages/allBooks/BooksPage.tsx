@@ -12,7 +12,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { startTransition, useOptimistic, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import BookAddModal from "../../components/books/BookAddModal";
 import BookBorrowModal from "../../components/books/BookBorrowModal";
@@ -51,23 +51,14 @@ const BooksPage = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showStats, setShowStats] = useState(true);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+
   const books = booksData?.data || [];
 
-  // Optimistic state for books
-  const [optimisticBooks, addOptimisticBook] = useOptimistic(
-    books,
-    (currentBooks, optimisticUpdate: { type: "delete"; bookId: string }) => {
-      if (optimisticUpdate.type === "delete") {
-        return currentBooks.filter(
-          (book) => book._id !== optimisticUpdate.bookId
-        );
-      }
-      return currentBooks;
-    }
-  );
-
   // Filter books based on search and genre
-  const filteredBooks = optimisticBooks.filter((book) => {
+  const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,6 +66,18 @@ const BooksPage = () => {
     const matchesGenre = filterGenre === "" || book.genre === filterGenre;
     return matchesSearch && matchesGenre;
   });
+
+  // Pagination logic
+  const totalItems = filteredBooks.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBooks = filteredBooks.slice(startIndex, endIndex);
+
+  // Reset to first page when search/filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterGenre]);
 
   // Get unique genres for filter
   const genres = [...new Set(books.map((book) => book.genre))];
@@ -91,31 +94,24 @@ const BooksPage = () => {
     setIsDeleteModalOpen(true);
   };
 
-  // Handle optimistic deletion
-  const handleOptimisticDelete = async (bookId: string, bookTitle: string) => {
-    // Add optimistic update
-    addOptimisticBook({ type: "delete", bookId });
+  // Handle book deletion
+  const handleDelete = async (bookId: string, bookTitle: string) => {
+    try {
+      await deleteBook(bookId).unwrap();
 
-    // Start transition for the actual API call
-    startTransition(async () => {
-      try {
-        await deleteBook(bookId).unwrap();
-
-        // Success toast
-        toast.success("Book deleted successfully!", {
-          description: `"${bookTitle}" has been permanently removed from the library.`,
-          duration: 4000,
-        });
-      } catch (error) {
-        // Revert optimistic update on error
-        console.error("Failed to delete book:", error);
-        toast.error("Failed to delete book", {
-          description:
-            "An error occurred while deleting the book. Please try again.",
-          duration: 5000,
-        });
-      }
-    });
+      // Success toast
+      toast.success("Book deleted successfully!", {
+        description: `"${bookTitle}" has been permanently removed from the library.`,
+        duration: 4000,
+      });
+    } catch (error) {
+      console.error("Failed to delete book:", error);
+      toast.error("Failed to delete book", {
+        description:
+          "An error occurred while deleting the book. Please try again.",
+        duration: 5000,
+      });
+    }
   };
 
   // Open borrow modal
@@ -167,7 +163,7 @@ const BooksPage = () => {
       {/* Stats */}
       {showStats && (
         <div className="mb-8">
-          <BookStats books={optimisticBooks} />
+          <BookStats books={books} />
         </div>
       )}
 
@@ -282,7 +278,7 @@ const BooksPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredBooks.map((book) => (
+                {currentBooks.map((book) => (
                   <tr
                     key={book._id}
                     className="hover:bg-gray-50 transition-colors"
@@ -382,7 +378,7 @@ const BooksPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredBooks.map((book) => (
+          {currentBooks.map((book) => (
             <BookCard
               key={book._id}
               book={book}
@@ -404,6 +400,92 @@ const BooksPage = () => {
         </div>
       )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Items per page selector */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Show:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={6}>6 per page</option>
+              <option value={12}>12 per page</option>
+              <option value={24}>24 per page</option>
+              <option value={48}>48 per page</option>
+            </select>
+          </div>
+
+          {/* Page info */}
+          <div className="text-sm text-gray-600">
+            Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
+            {totalItems} books
+          </div>
+
+          {/* Page navigation */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-gray-600 hover:text-gray-900 disabled:opacity-50 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+            >
+              Previous
+            </Button>
+
+            {/* Page numbers */}
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 min-w-[40px] ${
+                      currentPage === pageNum
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                        : "text-gray-600 hover:text-gray-900 !bg-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-gray-600 hover:text-gray-900 disabled:opacity-50 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       <BookAddModal
         isOpen={isAddModalOpen}
@@ -421,7 +503,7 @@ const BooksPage = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         bookId={bookToDelete?._id || ""}
         bookTitle={bookToDelete?.title || ""}
-        onConfirm={handleOptimisticDelete}
+        onConfirm={handleDelete}
       />
 
       <BookBorrowModal
