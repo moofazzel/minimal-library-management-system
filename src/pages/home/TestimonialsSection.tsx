@@ -1,6 +1,10 @@
+import { motion, useInView } from "framer-motion";
 import { Quote } from "lucide-react";
+import { useRef } from "react";
 
 const TestimonialsSection = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const testimonials = [
     {
       name: "Sarah Johnson",
@@ -29,18 +33,39 @@ const TestimonialsSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+    <motion.section
+      ref={ref}
+      className="py-20 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="container mx-auto px-3 sm:px-0">
-        <div className="text-center space-y-4 mb-16">
+        <motion.div
+          className="text-center space-y-4 mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
           <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-orange-600 bg-clip-text text-transparent">
             What Our <span className="text-orange-600">Readers Say</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Join thousands of satisfied readers who love our platform
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: { staggerChildren: 0.15, delayChildren: 0.3 },
+            },
+          }}
+        >
           {testimonials.map((testimonial, index) => {
             const gradients = [
               "from-blue-500 to-indigo-600",
@@ -50,9 +75,16 @@ const TestimonialsSection = () => {
             const gradient = gradients[index % gradients.length];
 
             return (
-              <div
+              <motion.div
                 key={index}
                 className="bg-white p-8 rounded-2xl border border-gray-200 relative hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 hover:scale-105"
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                animate={
+                  isInView
+                    ? { opacity: 1, scale: 1, y: 0 }
+                    : { opacity: 0, scale: 0.9, y: 40 }
+                }
+                transition={{ duration: 0.7, delay: 0.3 + index * 0.15 }}
               >
                 <div
                   className={`absolute top-4 left-4 w-12 h-12 bg-gradient-to-r ${gradient} rounded-2xl flex items-center justify-center shadow-lg`}
@@ -79,12 +111,12 @@ const TestimonialsSection = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 

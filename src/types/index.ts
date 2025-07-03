@@ -38,6 +38,7 @@ export interface Book {
   description: string;
   copies: number;
   available: boolean;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +52,7 @@ export interface CreateBookRequest {
   description: string;
   copies: number;
   available?: boolean;
+  image?: string;
 }
 
 // Update book request with partial fields
@@ -176,6 +178,7 @@ export const validateBook = (book: unknown): book is Book => {
     typeof bookObj.description === "string" &&
     typeof bookObj.copies === "number" &&
     typeof bookObj.available === "boolean" &&
+    (bookObj.image === undefined || typeof bookObj.image === "string") &&
     typeof bookObj.createdAt === "string" &&
     typeof bookObj.updatedAt === "string"
   );
@@ -196,7 +199,8 @@ export const validateCreateBookRequest = (
     typeof req.isbn === "string" &&
     typeof req.description === "string" &&
     typeof req.copies === "number" &&
-    (req.available === undefined || typeof req.available === "boolean")
+    (req.available === undefined || typeof req.available === "boolean") &&
+    (req.image === undefined || typeof req.image === "string")
   );
 };
 

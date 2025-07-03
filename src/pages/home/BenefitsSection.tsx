@@ -1,7 +1,11 @@
+import { motion, useInView } from "framer-motion";
 import { BookOpen, CheckCircle, Play } from "lucide-react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 
 const BenefitsSection = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const benefits = [
     "No registration fees or hidden costs",
     "Access to premium and rare book collections",
@@ -12,11 +16,27 @@ const BenefitsSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <motion.section
+      ref={ref}
+      className="py-20 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50"
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="container mx-auto px-3 sm:px-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <div className="space-y-4">
+          <motion.div
+            className="space-y-8"
+            initial={{ opacity: 0, x: -40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -40 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <motion.div
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
               <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-emerald-600 bg-clip-text text-transparent">
                 Everything You Need for{" "}
                 <span className="text-emerald-600">Reading Success</span>
@@ -25,18 +45,41 @@ const BenefitsSection = () => {
                 Our comprehensive platform provides all the tools and resources
                 you need to make the most of your reading journey.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              initial="hidden"
+              animate={isInView ? "visible" : "hidden"}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: { staggerChildren: 0.12, delayChildren: 0.4 },
+                },
+              }}
+            >
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-3">
+                <motion.div
+                  key={index}
+                  className="flex items-center space-x-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={
+                    isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }
+                  }
+                  transition={{ duration: 0.6, delay: 0.5 + index * 0.12 }}
+                >
                   <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                   <span className="text-gray-600">{benefit}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.7, delay: 0.7 }}
+            >
               <Link
                 to="/books"
                 className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105"
@@ -47,10 +90,19 @@ const BenefitsSection = () => {
                 <Play className="h-4 w-4 mr-2" />
                 Watch Demo
               </button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="relative">
+          <motion.div
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9, y: 40 }}
+            animate={
+              isInView
+                ? { opacity: 1, scale: 1, y: 0 }
+                : { opacity: 0, scale: 0.9, y: 40 }
+            }
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
             <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-xl">
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
@@ -102,10 +154,10 @@ const BenefitsSection = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 

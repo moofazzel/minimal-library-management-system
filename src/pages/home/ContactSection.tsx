@@ -1,3 +1,4 @@
+import { motion, useInView } from "framer-motion";
 import {
   Facebook,
   Instagram,
@@ -7,14 +8,33 @@ import {
   Phone,
   Twitter,
 } from "lucide-react";
+import { useRef } from "react";
 
 const ContactSection = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
   return (
-    <section className="py-20 bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50">
+    <motion.section
+      ref={ref}
+      className="py-20 bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50"
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="container mx-auto px-3 sm:px-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div className="space-y-8">
-            <div className="space-y-4">
+          <motion.div
+            className="space-y-8"
+            initial={{ opacity: 0, x: -40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -40 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <motion.div
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
               <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent">
                 Get in <span className="text-indigo-600">Touch</span>
               </h2>
@@ -22,9 +42,14 @@ const ContactSection = () => {
                 Have questions? We'd love to hear from you. Send us a message
                 and we'll respond as soon as possible.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="space-y-6">
+            <motion.div
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
                   <Mail className="h-6 w-6 text-white" />
@@ -56,37 +81,84 @@ const ContactSection = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex space-x-4">
-              <a
+            <motion.div
+              className="flex space-x-4"
+              initial="hidden"
+              animate={isInView ? "visible" : "hidden"}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: { staggerChildren: 0.12, delayChildren: 0.5 },
+                },
+              }}
+            >
+              <motion.a
                 href="#"
                 className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-110 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={
+                  isInView
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.8 }
+                }
+                transition={{ duration: 0.5, delay: 0.6 }}
               >
                 <Facebook className="h-5 w-5" />
-              </a>
-              <a
+              </motion.a>
+              <motion.a
                 href="#"
                 className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-110 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={
+                  isInView
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.8 }
+                }
+                transition={{ duration: 0.5, delay: 0.72 }}
               >
                 <Twitter className="h-5 w-5" />
-              </a>
-              <a
+              </motion.a>
+              <motion.a
                 href="#"
                 className="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center text-white hover:from-pink-600 hover:to-rose-700 transition-all duration-300 hover:scale-110 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={
+                  isInView
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.8 }
+                }
+                transition={{ duration: 0.5, delay: 0.84 }}
               >
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a
+              </motion.a>
+              <motion.a
                 href="#"
                 className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:scale-110 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={
+                  isInView
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.8 }
+                }
+                transition={{ duration: 0.5, delay: 0.96 }}
               >
                 <Linkedin className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
+              </motion.a>
+            </motion.div>
+          </motion.div>
 
-          <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-xl">
+          <motion.div
+            className="bg-white p-8 rounded-2xl border border-gray-200 shadow-xl"
+            initial={{ opacity: 0, scale: 0.95, y: 40 }}
+            animate={
+              isInView
+                ? { opacity: 1, scale: 1, y: 0 }
+                : { opacity: 0, scale: 0.95, y: 40 }
+            }
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
             <form className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -136,10 +208,10 @@ const ContactSection = () => {
                 Send Message
               </button>
             </form>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 
