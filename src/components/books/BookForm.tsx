@@ -1,4 +1,6 @@
+import { HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { validateISBN } from "../../lib/utils";
 import { Genre, type Book, type CreateBookRequest } from "../../types";
 import { Button } from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
@@ -61,8 +63,11 @@ const BookForm = ({
 
     if (!formData.isbn.trim()) {
       newErrors.isbn = "ISBN is required";
-    } else if (!/^\d{10}(\d{3})?$/.test(formData.isbn.replace(/-/g, ""))) {
-      newErrors.isbn = "Please enter a valid ISBN (10 or 13 digits)";
+    } else {
+      const isbnValidation = validateISBN(formData.isbn);
+      if (!isbnValidation.isValid) {
+        newErrors.isbn = isbnValidation.error || "Invalid ISBN format";
+      }
     }
 
     if (formData.copies < 0) {
@@ -147,13 +152,44 @@ const BookForm = ({
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="isbn" className="text-sm font-medium">
+              <label
+                htmlFor="isbn"
+                className="text-sm font-medium flex items-center"
+              >
                 ISBN *
+                <div className="relative ml-2 group">
+                  <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 max-w-xs">
+                    <div className="font-semibold mb-1">ISBN Format:</div>
+                    <div>• ISBN-10: 10 digits (e.g., 1234567890)</div>
+                    <div>• ISBN-13: 13 digits (e.g., 1234567890123)</div>
+                    <div className="mt-1 text-gray-300">
+                      Only numbers allowed, no spaces or hyphens
+                    </div>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
+                  </div>
+                </div>
               </label>
               <Input
                 id="isbn"
                 value={formData.isbn}
-                onChange={(e) => handleInputChange("isbn", e.target.value)}
+                onChange={(e) => {
+                  // Only allow digits
+                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  handleInputChange("isbn", value);
+                }}
+                onKeyPress={(e) => {
+                  // Allow only digits and control keys
+                  const char = String.fromCharCode(e.which);
+                  if (
+                    !/[0-9]/.test(char) &&
+                    e.key !== "Backspace" &&
+                    e.key !== "Delete" &&
+                    e.key !== "Tab"
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
                 placeholder="Enter ISBN"
                 className={errors.isbn ? "border-destructive" : ""}
               />

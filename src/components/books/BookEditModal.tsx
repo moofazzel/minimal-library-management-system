@@ -5,6 +5,7 @@ import {
   Edit3,
   FileText,
   Hash,
+  HelpCircle,
   Tag,
   User,
   X,
@@ -13,6 +14,7 @@ import type React from "react";
 import { startTransition, useEffect, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { validateISBN } from "../../lib/utils";
 import { useUpdateBookMutation } from "../../redux/api/baseApi";
 import type { Book } from "../../types";
 import { Genre } from "../../types";
@@ -43,9 +45,15 @@ const updateBookSchema = z.object({
   isbn: z
     .string()
     .min(1, "ISBN is required")
-    .regex(
-      /^[0-9-]{10,17}$/,
-      "ISBN must be 10-17 digits with optional hyphens"
+    .refine(
+      (value) => {
+        const result = validateISBN(value);
+        return result.isValid;
+      },
+      (value) => {
+        const result = validateISBN(value);
+        return { message: result.error || "Invalid ISBN format" };
+      }
     ),
   description: z
     .string()
@@ -371,19 +379,47 @@ const BookEditModal: React.FC<BookEditModalProps> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
               <Hash className="h-4 w-4 mr-2 text-gray-500" />
-              ISBN *
+              ISBN (10 or 13 digits) *
+              <div className="relative ml-2 group">
+                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 max-w-xs">
+                  <div className="font-semibold mb-1">ISBN Format:</div>
+                  <div>• ISBN-10: 10 digits (e.g., 1234567890)</div>
+                  <div>• ISBN-13: 13 digits (e.g., 1234567890123)</div>
+                  <div className="mt-1 text-gray-300">
+                    Only numbers allowed, no spaces or hyphens
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
+                </div>
+              </div>
             </label>
             <input
               type="text"
               required
               value={formData.isbn}
-              onChange={(e) => handleFieldChange("isbn", e.target.value)}
+              onChange={(e) => {
+                // Only allow digits
+                const value = e.target.value.replace(/[^0-9]/g, "");
+                handleFieldChange("isbn", value);
+              }}
+              onKeyPress={(e) => {
+                // Allow only digits and control keys
+                const char = String.fromCharCode(e.which);
+                if (
+                  !/[0-9]/.test(char) &&
+                  e.key !== "Backspace" &&
+                  e.key !== "Delete" &&
+                  e.key !== "Tab"
+                ) {
+                  e.preventDefault();
+                }
+              }}
               className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors font-mono ${
                 fieldErrors.isbn
                   ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                   : "border-gray-300"
               }`}
-              placeholder="Enter ISBN number (e.g., 9780743273565)"
+              placeholder="e.g., 1234567890 (10 digits) or 1234567890123 (13 digits)"
               disabled={isLoading}
             />
             {fieldErrors.isbn && (
