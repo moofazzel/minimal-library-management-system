@@ -35,7 +35,7 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/Textarea";
 
-const BookAddModal = () => {
+export default function BookAddModal() {
   const [isOpen, setIsOpen] = useState(false);
 
   const [createBook, { isLoading }] = useCreateBookMutation();
@@ -111,12 +111,18 @@ const BookAddModal = () => {
         setIsOpen(false);
       } catch (error) {
         console.error("Failed to create book:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
-        toast.error("Failed to add book", {
-          description:
-            "An error occurred while adding the book. Please try again.",
-          duration: 5000,
-        });
+        if (error instanceof Error && error.message === "PARSING_ERROR") {
+          toast.error("Validation failed", {
+            description: "Isbn is already exists or not valid.",
+            duration: 5000,
+          });
+        } else {
+          toast.error("Failed to add book", {
+            description:
+              "An error occurred while adding the book. Please try again.",
+            duration: 5000,
+          });
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -152,7 +158,6 @@ const BookAddModal = () => {
       setIsOpen(false);
     }
   };
-
   return (
     <>
       <Button
@@ -404,6 +409,4 @@ const BookAddModal = () => {
       </Dialog>
     </>
   );
-};
-
-export default BookAddModal;
+}

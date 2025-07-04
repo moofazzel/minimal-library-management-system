@@ -7,13 +7,13 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import BookAddModal from "../../components/books/BookAddModal";
 import BookGridView from "../../components/books/BookGridView";
 import BookListView from "../../components/books/BookListView";
 import BookSkeleton from "../../components/books/BookSkeleton";
 import BookStats from "../../components/books/BookStats";
 import { Button } from "../../components/ui/Button";
 import { useGetBooksQuery } from "../../redux/api/baseApi";
+import BookAddModal from "@/components/books/BookAddModal";
 
 const BooksPage = () => {
   const {
