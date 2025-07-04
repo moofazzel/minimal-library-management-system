@@ -80,7 +80,7 @@ const updateBookSchema = z.object({
 
 type UpdateBookFormData = z.infer<typeof updateBookSchema>;
 
-const BookEditModal = ({ book }: { book: Book }) => {
+export default function BookEditModal({ book }: { book: Book }) {
   const [isOpen, setIsOpen] = useState(false);
   const [updateBook, { isLoading }] = useUpdateBookMutation();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -458,6 +458,4 @@ const BookEditModal = ({ book }: { book: Book }) => {
       </Dialog>
     </>
   );
-};
-
-export default BookEditModal;
+}

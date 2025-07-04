@@ -22,7 +22,7 @@ interface BookBorrowModalProps {
   book: Book;
 }
 
-const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
+export default function BookBorrowModal({ book }: BookBorrowModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [createBorrow, { isLoading }] = useCreateBorrowMutation();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -390,6 +390,4 @@ const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
       </Dialog>
     </>
   );
-};
-
-export default BookBorrowModal;
+}

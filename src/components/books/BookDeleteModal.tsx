@@ -26,7 +26,7 @@ const deleteBookSchema = z.object({
 
 type DeleteBookFormData = z.infer<typeof deleteBookSchema>;
 
-const BookDeleteModal = ({ book }: BookDeleteModalProps) => {
+export default function BookDeleteModal({ book }: BookDeleteModalProps) {
   const { _id, title } = book;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -161,6 +161,4 @@ const BookDeleteModal = ({ book }: BookDeleteModalProps) => {
       </Dialog>
     </>
   );
-};
-
-export default BookDeleteModal;
+}
