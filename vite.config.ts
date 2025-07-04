@@ -22,6 +22,8 @@ export default defineConfig({
       },
     },
   },
+
+  // for deployment
   base: "/",
   build: {
     outDir: "dist",
