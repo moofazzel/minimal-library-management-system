@@ -42,7 +42,6 @@ const router = createBrowserRouter([
       </Layout>
     ),
   },
-  {},
 ]);
 
 export default router;

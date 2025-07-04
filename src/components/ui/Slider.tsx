@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 interface Slide {
@@ -228,8 +229,7 @@ const Slider = ({
                       }}
                       transition={{ duration: 0.6, delay: 1.2 }}
                     >
-                      <motion.a
-                        href={slide.ctaLink}
+                      <motion.div
                         className="group inline-flex items-center space-x-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform transition-all duration-300 border border-white/20 backdrop-blur-md"
                         whileHover={{
                           scale: 1.05,
@@ -238,14 +238,19 @@ const Slider = ({
                         }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <span className="text-white">{slide.ctaText}</span>
-                        <motion.div
-                          animate={{ x: [0, 5, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
+                        <Link
+                          to={slide.ctaLink}
+                          className="flex items-center space-x-3 text-white"
                         >
-                          <ChevronRight className="h-6 w-6 group-hover:translate-x-2 transition-transform" />
-                        </motion.div>
-                      </motion.a>
+                          <span className="text-white">{slide.ctaText}</span>
+                          <motion.div
+                            animate={{ x: [0, 5, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <ChevronRight className="h-6 w-6 group-hover:translate-x-2 transition-transform text-white" />
+                          </motion.div>
+                        </Link>
+                      </motion.div>
                     </motion.div>
                   )}
                 </div>
