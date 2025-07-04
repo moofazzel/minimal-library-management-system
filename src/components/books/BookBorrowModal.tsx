@@ -4,43 +4,26 @@ import { startTransition, useEffect, useOptimistic, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
-import { z } from "zod";
 import { useCreateBorrowMutation } from "../../redux/api/baseApi";
 import type { Book } from "../../types";
+import { borrowSchema, type BorrowFormData } from "../../zod";
 import { Button } from "../ui/Button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface BookBorrowModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  book: Book | null;
+  book: Book;
 }
 
-// Zod validation schema for borrow request
-const borrowSchema = z.object({
-  quantity: z
-    .number()
-    .int("Quantity must be a whole number")
-    .min(1, "At least 1 copy must be borrowed")
-    .max(10, "Maximum 10 copies can be borrowed at once"),
-  dueDate: z
-    .string()
-    .min(1, "Due date is required")
-    .refine((date) => {
-      const selectedDate = new Date(date);
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      return selectedDate >= tomorrow;
-    }, "Due date must be at least tomorrow"),
-});
-
-type BorrowFormData = z.infer<typeof borrowSchema>;
-
-const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
-  isOpen,
-  onClose,
-  book,
-}) => {
+const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [createBorrow, { isLoading }] = useCreateBorrowMutation();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -74,7 +57,7 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
       // Set default due date to 14 days from now
       const defaultDate = new Date();
       defaultDate.setDate(defaultDate.getDate() + 14);
-      setFormData((prev) => ({
+      setFormData((prev: BorrowFormData) => ({
         ...prev,
         dueDate: defaultDate.toISOString().split("T")[0],
       }));
@@ -97,9 +80,14 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
       fieldSchema.parse(value);
       setFieldErrors((prev) => ({ ...prev, [field]: "" }));
       return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldError = error.errors.find((e) => e.path.includes(field));
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errors" in error) {
+        const zodError = error as {
+          errors: Array<{ path: (string | number)[]; message: string }>;
+        };
+        const fieldError = zodError.errors.find(
+          (err) => typeof field === "string" && err.path.includes(field)
+        );
         if (fieldError) {
           setFieldErrors((prev) => ({ ...prev, [field]: fieldError.message }));
         }
@@ -112,7 +100,7 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
     field: keyof BorrowFormData,
     value: string | number
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev: BorrowFormData) => ({ ...prev, [field]: value }));
     validateField(field, value);
   };
 
@@ -153,7 +141,7 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
             quantity: 1,
             dueDate: "",
           });
-          onClose();
+          setIsOpen(false);
         } catch (error) {
           // Revert optimistic update on error
           console.error("Failed to borrow book:", error);
@@ -164,11 +152,14 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
           });
         }
       });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errors" in error) {
         // Validation errors
+        const zodError = error as {
+          errors: Array<{ path: (string | number)[]; message: string }>;
+        };
         const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        zodError.errors.forEach((err) => {
           const field = err.path[0] as string;
           errors[field] = err.message;
         });
@@ -189,199 +180,219 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
         dueDate: "",
       });
       setFieldErrors({});
-      onClose();
+      setIsOpen(false);
     }
   };
 
-  if (!isOpen) return null;
-
-  // Use optimistic book for display
-  const displayBook = optimisticBook || book;
-  if (!displayBook) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg">
-              <BookOpen className="h-6 w-6 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Borrow Book</h2>
-              <p className="text-sm text-gray-500">
-                Select quantity and due date
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(true)}
+        disabled={!book.available || book.copies === 0}
+        className={`flex-1 py-2 px-3 rounded-lg transition-all duration-300 ${
+          !book.available || book.copies === 0
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+            : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white hover:shadow-lg hover:shadow-green-500/25 hover:scale-105"
+        }`}
+        title={
+          !book.available || book.copies === 0
+            ? "Book not available"
+            : "Borrow Book"
+        }
+      >
+        <BookOpen className="h-4 w-4 mr-1" />
+        <span className="text-xs font-medium">Borrow</span>
+      </Button>
 
-        {/* Book Info */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-3 border border-blue-100">
-            <div className="flex items-center space-x-2">
-              <BookOpen className="h-4 w-4 text-blue-600" />
-              <span className="font-medium text-gray-900">
-                {displayBook.title}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-gray-600">
-                by {displayBook.author}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Hash className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600 font-mono">
-                {displayBook.isbn}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Copy className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-gray-600">
-                Available copies:{" "}
-                <span
-                  className={`font-semibold ${
-                    displayBook.copies > 0 ? "text-green-700" : "text-red-700"
-                  }`}
-                >
-                  {displayBook.copies}
-                </span>
-                {optimisticBook !== book && (
-                  <span className="text-xs text-blue-600 ml-2">
-                    (Processing...)
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-              <Copy className="h-4 w-4 mr-2 text-gray-500" />
-              Quantity *
-            </label>
-            <input
-              type="number"
-              min="1"
-              max={Math.min(displayBook.copies, 10)}
-              required
-              value={formData.quantity}
-              onChange={(e) =>
-                handleFieldChange("quantity", parseInt(e.target.value) || 1)
-              }
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
-                fieldErrors.quantity
-                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                  : "border-gray-300"
-              }`}
-              placeholder="Enter quantity"
-              disabled={isLoading}
-            />
-            {fieldErrors.quantity && (
-              <p className="text-xs text-red-600 mt-1">
-                {fieldErrors.quantity}
-              </p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Maximum {Math.min(displayBook.copies, 10)} copies available
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-              Due Date *
-            </label>
-            <div className="relative w-full">
-              <DatePicker
-                selected={formData.dueDate ? new Date(formData.dueDate) : null}
-                onChange={(date: Date | null) => {
-                  if (date) {
-                    handleFieldChange(
-                      "dueDate",
-                      date.toISOString().split("T")[0]
-                    );
-                  }
-                }}
-                minDate={new Date(getMinDate())}
-                dateFormat="MMMM d, yyyy"
-                placeholderText="Select due date"
-                className={`w-full px-4 py-3 pl-10 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
-                  fieldErrors.dueDate
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
-                disabled={isLoading}
-              />
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-            </div>
-            {fieldErrors.dueDate && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.dueDate}</p>
-            )}
-
-            {formData.dueDate && (
-              <p className="text-xs text-emerald-600 mt-1 font-medium">
-                Selected:{" "}
-                {new Date(formData.dueDate).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex space-x-3 pt-4 border-t border-gray-200">
-            <Button
-              type="submit"
-              disabled={
-                isLoading ||
-                Object.keys(fieldErrors).some(
-                  (key) => fieldErrors[key] !== ""
-                ) ||
-                displayBook.copies === 0
-              }
-              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </div>
-              ) : (
-                <>
-                  <BookOpen className="h-4 w-4 mr-2" />
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] md:max-h-[85vh] p-0">
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-red-100 data-[state=open]:text-red-950 hover:bg-red-100">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          <DialogHeader className="p-6 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg">
+                <BookOpen className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <span className="text-xl font-bold text-gray-900">
                   Borrow Book
-                </>
-              )}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+                </span>
+                <DialogDescription>
+                  Select quantity and due date
+                </DialogDescription>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="h-full max-h-[calc(90vh-8rem)] md:max-h-[calc(85vh-8rem)]">
+            {/* Book Info */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-3 border border-blue-100">
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-gray-900">
+                    {book.title}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm text-gray-600">
+                    by {book.author}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Hash className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600 font-mono">
+                    {book.isbn}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Copy className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-gray-600">
+                    Available copies:{" "}
+                    <span
+                      className={`font-semibold ${
+                        book.copies > 0 ? "text-green-700" : "text-red-700"
+                      }`}
+                    >
+                      {book.copies}
+                    </span>
+                    {optimisticBook !== book && (
+                      <span className="text-xs text-blue-600 ml-2">
+                        (Processing...)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                  <Copy className="h-4 w-4 mr-2 text-gray-500" />
+                  Quantity *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={Math.min(book.copies, 10)}
+                  required
+                  value={formData.quantity}
+                  onChange={(e) =>
+                    handleFieldChange("quantity", parseInt(e.target.value) || 1)
+                  }
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                    fieldErrors.quantity
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Enter quantity"
+                  disabled={isLoading}
+                />
+                {fieldErrors.quantity && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {fieldErrors.quantity}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum {Math.min(book.copies, 10)} copies available
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  Due Date *
+                </label>
+                <div className="relative w-full">
+                  <DatePicker
+                    selected={
+                      formData.dueDate ? new Date(formData.dueDate) : null
+                    }
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        handleFieldChange(
+                          "dueDate",
+                          date.toISOString().split("T")[0]
+                        );
+                      }
+                    }}
+                    minDate={new Date(getMinDate())}
+                    dateFormat="MMMM d, yyyy"
+                    placeholderText="Select due date"
+                    className={`w-full px-4 py-3 pl-10 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                      fieldErrors.dueDate
+                        ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    disabled={isLoading}
+                  />
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                </div>
+                {fieldErrors.dueDate && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {fieldErrors.dueDate}
+                  </p>
+                )}
+
+                {formData.dueDate && (
+                  <p className="text-xs text-emerald-600 mt-1 font-medium">
+                    Selected:{" "}
+                    {new Date(formData.dueDate).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                <Button
+                  type="submit"
+                  disabled={
+                    isLoading ||
+                    Object.keys(fieldErrors).some(
+                      (key) => fieldErrors[key] !== ""
+                    ) ||
+                    book.copies === 0
+                  }
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    <>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Borrow Book
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

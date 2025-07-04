@@ -1,31 +1,19 @@
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
-  BookOpen,
-  CheckCircle,
-  Edit,
   Filter,
   LayoutGrid,
   List as ListIcon,
-  Plus,
   Search,
-  Trash2,
-  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import BookAddModal from "../../components/books/BookAddModal";
-import BookBorrowModal from "../../components/books/BookBorrowModal";
-import BookCard from "../../components/books/BookCard";
-import BookDeleteModal from "../../components/books/BookDeleteModal";
-import BookEditModal from "../../components/books/BookEditModal";
+import BookGridView from "../../components/books/BookGridView";
+import BookListView from "../../components/books/BookListView";
 import BookSkeleton from "../../components/books/BookSkeleton";
 import BookStats from "../../components/books/BookStats";
 import { Button } from "../../components/ui/Button";
-import {
-  useDeleteBookMutation,
-  useGetBooksQuery,
-} from "../../redux/api/baseApi";
+import { useGetBooksQuery } from "../../redux/api/baseApi";
 import type { Book } from "../../types";
 
 const BooksPage = () => {
@@ -35,21 +23,11 @@ const BooksPage = () => {
     error,
   } = useGetBooksQuery({ limit: 1000 });
 
-  const [deleteBook] = useDeleteBookMutation();
-
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-
-  // Search, filter, and view states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterGenre, setFilterGenre] = useState("");
+  // View states
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showStats, setShowStats] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterGenre, setFilterGenre] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,42 +60,10 @@ const BooksPage = () => {
   // Get unique genres for filter
   const genres = [...new Set(books.map((book) => book.genre))];
 
-  // Open edit modal
-  const openEditModal = (book: Book) => {
-    setSelectedBook(book);
-    setIsEditModalOpen(true);
-  };
-
-  // Open delete modal
-  const openDeleteModal = (book: Book) => {
-    setBookToDelete(book);
-    setIsDeleteModalOpen(true);
-  };
-
-  // Handle book deletion
-  const handleDelete = async (bookId: string, bookTitle: string) => {
-    try {
-      await deleteBook(bookId).unwrap();
-
-      // Success toast
-      toast.success("Book deleted successfully!", {
-        description: `"${bookTitle}" has been permanently removed from the library.`,
-        duration: 4000,
-      });
-    } catch (error) {
-      console.error("Failed to delete book:", error);
-      toast.error("Failed to delete book", {
-        description:
-          "An error occurred while deleting the book. Please try again.",
-        duration: 5000,
-      });
-    }
-  };
-
-  // Open borrow modal
-  const openBorrowModal = (book: Book) => {
-    setSelectedBook(book);
-    setIsBorrowModalOpen(true);
+  // Handle borrow
+  const handleBorrow = (book: Book) => {
+    // The borrow modal will handle its own state and logic
+    console.log("Borrow book:", book.title);
   };
 
   if (isLoading) {
@@ -244,154 +190,11 @@ const BooksPage = () => {
         </div>
       </div>
 
-      {/* Books List */}
+      {/* Books View */}
       {viewMode === "list" ? (
-        <div className="bg-white rounded-xl shadow-md border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Book
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Genre
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    ISBN
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Copies
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {currentBooks.map((book) => (
-                  <tr
-                    key={book._id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {book.title}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          by {book.author}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {book.genre}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">
-                      {book.isbn}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {book.copies}
-                    </td>
-                    <td className="px-6 py-4">
-                      {book.available && book.copies > 0 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Available
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Unavailable
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex items-center gap-2 w-full">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openBorrowModal(book)}
-                          disabled={!book.available || book.copies === 0}
-                          className={`flex-1 py-2 px-3 rounded-lg transition-all duration-300 ${
-                            !book.available || book.copies === 0
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                              : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white hover:shadow-lg hover:shadow-green-500/25 hover:scale-105"
-                          }`}
-                          title={
-                            !book.available || book.copies === 0
-                              ? "Book not available"
-                              : "Borrow Book"
-                          }
-                        >
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          <span className="text-xs font-medium">Borrow</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditModal(book)}
-                          className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                          title="Edit Book"
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          <span className="text-xs font-medium">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteModal(book)}
-                          className="flex-1 py-2 px-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25 hover:scale-105"
-                          title="Delete Book"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          <span className="text-xs font-medium">Delete</span>
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredBooks.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium">No books found</p>
-              <p className="text-sm">
-                Try adjusting your search or filter criteria
-              </p>
-            </div>
-          )}
-        </div>
+        <BookListView books={currentBooks} onBorrow={handleBorrow} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {currentBooks.map((book) => (
-            <BookCard
-              key={book._id}
-              book={book}
-              onEdit={openEditModal}
-              onDelete={openDeleteModal}
-              onBorrow={openBorrowModal}
-            />
-          ))}
-
-          {filteredBooks.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium">No books found</p>
-              <p className="text-sm">
-                Try adjusting your search or filter criteria
-              </p>
-            </div>
-          )}
-        </div>
+        <BookGridView books={currentBooks} onBorrow={handleBorrow} />
       )}
 
       {/* Pagination */}
@@ -479,28 +282,6 @@ const BooksPage = () => {
           </div>
         </div>
       )}
-
-      {/* Modals */}
-
-      <BookEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        book={selectedBook}
-      />
-
-      <BookDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        bookId={bookToDelete?._id || ""}
-        bookTitle={bookToDelete?.title || ""}
-        onConfirm={handleDelete}
-      />
-
-      <BookBorrowModal
-        isOpen={isBorrowModalOpen}
-        onClose={() => setIsBorrowModalOpen(false)}
-        book={selectedBook}
-      />
     </div>
   );
 };
