@@ -26,7 +26,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm px-1">
       <div className="container mx-auto px-3 md:px-0 ">
         <div className="flex h-16 items-center justify-between">
           {/* Logo Section */}
