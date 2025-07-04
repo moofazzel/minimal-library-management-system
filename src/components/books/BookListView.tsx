@@ -1,4 +1,5 @@
 import { BookOpen, CheckCircle, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Book } from "../../types";
 import BookBorrowModal from "./BookBorrowModal";
 import BookDeleteModal from "./BookDeleteModal";
@@ -50,9 +51,11 @@ const BookListView = ({ books }: BookListViewProps) => {
               <tr key={book._id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {book.title}
-                    </div>
+                    <Link to={`/books/${book._id}`}>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {book.title}
+                      </h3>
+                    </Link>
                     <div className="text-sm text-gray-500">
                       by {book.author}
                     </div>

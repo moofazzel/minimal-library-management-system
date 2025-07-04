@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Copy, Hash, User, X } from "lucide-react";
+import { BookOpen, Calendar, Copy, Hash, User } from "lucide-react";
 import type React from "react";
 import { startTransition, useEffect, useOptimistic, useState } from "react";
 import DatePicker from "react-datepicker";
@@ -10,12 +10,12 @@ import { borrowSchema, type BorrowFormData } from "../../zod";
 import { Button } from "../ui/Button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { Input } from "../ui/Input";
 import { ScrollArea } from "../ui/scroll-area";
 
 interface BookBorrowModalProps {
@@ -191,10 +191,10 @@ const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
         size="sm"
         onClick={() => setIsOpen(true)}
         disabled={!book.available || book.copies === 0}
-        className={`flex-1 py-2 px-3 rounded-lg transition-all duration-300 ${
+        className={`flex-1 py-2 px-3 rounded-lg transition-all duration-300 w-full ${
           !book.available || book.copies === 0
             ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-            : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white hover:shadow-lg hover:shadow-green-500/25 hover:scale-105"
+            : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white hover:text-gray-100 hover:shadow-lg hover:shadow-green-500/25 hover:scale-105"
         }`}
         title={
           !book.available || book.copies === 0
@@ -203,15 +203,11 @@ const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
         }
       >
         <BookOpen className="h-4 w-4 mr-1" />
-        <span className="text-xs font-medium">Borrow</span>
+        <span className="text-xs font-medium hidden md:block">Borrow</span>
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md max-h-[90vh] md:max-h-[85vh] p-0">
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-red-100 data-[state=open]:text-red-950 hover:bg-red-100">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
           <DialogHeader className="p-6 border-b">
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg">
@@ -278,7 +274,7 @@ const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
                   <Copy className="h-4 w-4 mr-2 text-gray-500" />
                   Quantity *
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max={Math.min(book.copies, 10)}
@@ -287,11 +283,11 @@ const BookBorrowModal = ({ book }: BookBorrowModalProps) => {
                   onChange={(e) =>
                     handleFieldChange("quantity", parseInt(e.target.value) || 1)
                   }
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                  className={
                     fieldErrors.quantity
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter quantity"
                   disabled={isLoading}
                 />

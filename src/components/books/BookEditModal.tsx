@@ -9,10 +9,9 @@ import {
   HelpCircle,
   Tag,
   User,
-  X,
 } from "lucide-react";
 import type React from "react";
-import { startTransition, useEffect, useOptimistic, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { validateISBN } from "../../lib/utils";
@@ -20,6 +19,23 @@ import { useUpdateBookMutation } from "../../redux/api/baseApi";
 import type { Book } from "../../types";
 import { Genre } from "../../types";
 import { Button } from "../ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/Input";
+import { ScrollArea } from "../ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Textarea } from "../ui/Textarea";
 
 // Zod validation schema for update book request
 const updateBookSchema = z.object({
@@ -79,26 +95,6 @@ const BookEditModal = ({ book }: { book: Book }) => {
     copies: 1,
     available: true,
   });
-
-  // Optimistic state for the book
-  const [optimisticBook, addOptimisticBook] = useOptimistic(
-    book,
-    (currentBook, optimisticUpdate: UpdateBookFormData) => {
-      if (!currentBook) return currentBook;
-
-      return {
-        ...currentBook,
-        title: optimisticUpdate.title,
-        author: optimisticUpdate.author,
-        genre: optimisticUpdate.genre,
-        isbn: optimisticUpdate.isbn,
-        description: optimisticUpdate.description,
-        copies: optimisticUpdate.copies,
-        available: optimisticUpdate.available,
-        updatedAt: new Date().toISOString(),
-      };
-    }
-  );
 
   // Update form data when book changes
   useEffect(() => {
@@ -162,9 +158,6 @@ const BookEditModal = ({ book }: { book: Book }) => {
       // Validate entire form
       const validatedData = updateBookSchema.parse(formData);
 
-      // Add optimistic update
-      addOptimisticBook(validatedData);
-
       // Start transition for the actual API call
       startTransition(async () => {
         try {
@@ -178,7 +171,6 @@ const BookEditModal = ({ book }: { book: Book }) => {
 
           setIsOpen(false);
         } catch (error) {
-          // Revert optimistic update on error
           console.error("Failed to update book:", error);
           toast.error("Failed to update book", {
             description:
@@ -212,112 +204,53 @@ const BookEditModal = ({ book }: { book: Book }) => {
     }
   };
 
-  // Use optimistic book for display
-  const displayBook = optimisticBook || book;
-
   return (
     <>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+        className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white hover:text-gray-100 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105"
         title="Edit Book"
       >
         <Edit className="h-4 w-4 mr-1" />
-        <span className="text-xs font-medium">Edit</span>
+        <span className="text-xs font-medium hidden md:block">Edit</span>
       </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto modal-scroll">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto my-4 max-h-[95vh] overflow-y-auto scrollbar-thin modal-scroll">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex-shrink-0">
-                  <Edit3 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-                    Edit Book
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-500 truncate">
-                    Update book information
-                  </p>
-                </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] md:max-h-[85vh] p-0">
+          <DialogHeader className="p-6 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg">
+                <Edit3 className="h-6 w-6 text-blue-600" />
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="p-1.5 sm:p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:transform-none flex-shrink-0"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </div>
-
-            {/* Optimistic Preview */}
-            {optimisticBook !== book && (
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-sm font-medium text-blue-700">
-                    Updating book...
-                  </span>
-                </div>
-                <div className="bg-white rounded-lg p-3 border border-blue-200">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-gray-900">
-                      {displayBook.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <User className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm text-gray-600">
-                      by {displayBook.author}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Hash className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600 font-mono">
-                      {displayBook.isbn}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Copy className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-gray-600">
-                      Copies:{" "}
-                      <span className="font-semibold text-green-700">
-                        {displayBook.copies}
-                      </span>
-                    </span>
-                  </div>
-                </div>
+              <div>
+                <span className="text-xl font-bold text-gray-900">
+                  Edit Book
+                </span>
+                <DialogDescription>Update book information</DialogDescription>
               </div>
-            )}
+            </DialogTitle>
+          </DialogHeader>
 
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="p-4 sm:p-6 space-y-3 sm:space-y-4 pb-6"
-            >
+          <ScrollArea className="h-full max-h-[calc(90vh-8rem)] md:max-h-[calc(85vh-8rem)]">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
                   Title *
                 </label>
-                <input
+                <Input
                   type="text"
+                  name="title"
                   required
                   value={formData.title}
                   onChange={(e) => handleFieldChange("title", e.target.value)}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                  className={
                     fieldErrors.title
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter book title"
                   disabled={isLoading}
                 />
@@ -333,16 +266,17 @@ const BookEditModal = ({ book }: { book: Book }) => {
                   <User className="h-4 w-4 mr-2 text-gray-500" />
                   Author *
                 </label>
-                <input
+                <Input
                   type="text"
+                  name="author"
                   required
                   value={formData.author}
                   onChange={(e) => handleFieldChange("author", e.target.value)}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                  className={
                     fieldErrors.author
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter author name"
                   disabled={isLoading}
                 />
@@ -353,31 +287,36 @@ const BookEditModal = ({ book }: { book: Book }) => {
                 )}
               </div>
 
-              <div>
+              <div className="w-full">
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <Tag className="h-4 w-4 mr-2 text-gray-500" />
                   Genre *
                 </label>
-                <select
-                  required
+                <Select
+                  name="genre"
                   value={formData.genre}
-                  onChange={(e) =>
-                    handleFieldChange("genre", e.target.value as Genre)
+                  onValueChange={(value) =>
+                    handleFieldChange("genre", value as Genre)
                   }
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors cursor-pointer ${
-                    fieldErrors.genre
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
                   disabled={isLoading}
                 >
-                  <option value={Genre.FICTION}>Fiction</option>
-                  <option value={Genre.NON_FICTION}>Non-Fiction</option>
-                  <option value={Genre.SCIENCE}>Science</option>
-                  <option value={Genre.HISTORY}>History</option>
-                  <option value={Genre.BIOGRAPHY}>Biography</option>
-                  <option value={Genre.FANTASY}>Fantasy</option>
-                </select>
+                  <SelectTrigger
+                    className={`w-full !bg-white !border-gray-200 ${
+                      fieldErrors.genre
+                        ? "border-red-300 focus:ring-red-500"
+                        : ""
+                    }`}
+                  >
+                    <SelectValue placeholder="Select a genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(Genre).map((genre) => (
+                      <SelectItem key={genre} value={genre}>
+                        {genre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {fieldErrors.genre && (
                   <p className="text-xs text-red-600 mt-1">
                     {fieldErrors.genre}
@@ -388,49 +327,31 @@ const BookEditModal = ({ book }: { book: Book }) => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <Hash className="h-4 w-4 mr-2 text-gray-500" />
-                  ISBN (10 or 13 digits) *
-                  <div className="relative ml-2 group">
-                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 max-w-xs">
-                      <div className="font-semibold mb-1">ISBN Format:</div>
-                      <div>• ISBN-10: 10 digits (e.g., 1234567890)</div>
-                      <div>• ISBN-13: 13 digits (e.g., 1234567890123)</div>
-                      <div className="mt-1 text-gray-300">
-                        Only numbers allowed, no spaces or hyphens
-                      </div>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
-                    </div>
-                  </div>
+                  ISBN *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.isbn}
-                  onChange={(e) => {
-                    // Only allow digits
-                    const value = e.target.value.replace(/[^0-9]/g, "");
-                    handleFieldChange("isbn", value);
-                  }}
-                  onKeyPress={(e) => {
-                    // Allow only digits and control keys
-                    const char = String.fromCharCode(e.which);
-                    if (
-                      !/[0-9]/.test(char) &&
-                      e.key !== "Backspace" &&
-                      e.key !== "Delete" &&
-                      e.key !== "Tab"
-                    ) {
-                      e.preventDefault();
+                <div className="relative">
+                  <Input
+                    type="text"
+                    name="isbn"
+                    required
+                    value={formData.isbn}
+                    onChange={(e) => handleFieldChange("isbn", e.target.value)}
+                    className={
+                      fieldErrors.isbn
+                        ? "border-red-300 focus-visible:ring-red-500 pr-10"
+                        : "pr-10"
                     }
-                  }}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors font-mono ${
-                    fieldErrors.isbn
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="e.g., 1234567890 (10 digits) or 1234567890123 (13 digits)"
-                  disabled={isLoading}
-                />
+                    placeholder="Enter ISBN (10 or 13 digits)"
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {formData.isbn && !fieldErrors.isbn ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <HelpCircle className="h-5 w-5 text-gray-400" />
+                    )}
+                  </div>
+                </div>
                 {fieldErrors.isbn && (
                   <p className="text-xs text-red-600 mt-1">
                     {fieldErrors.isbn}
@@ -441,18 +362,19 @@ const BookEditModal = ({ book }: { book: Book }) => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                  Description
+                  Description *
                 </label>
-                <textarea
+                <Textarea
+                  name="description"
+                  required
                   value={formData.description}
                   onChange={(e) =>
                     handleFieldChange("description", e.target.value)
                   }
-                  rows={3}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none ${
+                  className={`min-h-[100px] ${
                     fieldErrors.description
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
                   }`}
                   placeholder="Enter book description"
                   disabled={isLoading}
@@ -469,20 +391,21 @@ const BookEditModal = ({ book }: { book: Book }) => {
                   <Copy className="h-4 w-4 mr-2 text-gray-500" />
                   Number of Copies *
                 </label>
-                <input
+                <Input
                   type="number"
-                  min="0"
-                  max="100"
+                  name="copies"
                   required
+                  min={0}
+                  max={100}
                   value={formData.copies}
                   onChange={(e) =>
                     handleFieldChange("copies", parseInt(e.target.value) || 0)
                   }
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                  className={
                     fieldErrors.copies
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter number of copies"
                   disabled={isLoading}
                 />
@@ -491,32 +414,13 @@ const BookEditModal = ({ book }: { book: Book }) => {
                     {fieldErrors.copies}
                   </p>
                 )}
-              </div>
-
-              <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-                <input
-                  type="checkbox"
-                  id="available"
-                  checked={formData.available}
-                  onChange={(e) =>
-                    handleFieldChange("available", e.target.checked)
-                  }
-                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-                  disabled={isLoading}
-                />
-                <label
-                  htmlFor="available"
-                  className="text-sm font-medium text-gray-700 flex items-center"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">
-                    Available for borrowing
-                  </span>
-                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum 100 copies allowed
+                </p>
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex space-x-3 pt-4 border-t">
                 <Button
                   type="submit"
                   disabled={
@@ -525,17 +429,17 @@ const BookEditModal = ({ book }: { book: Book }) => {
                       (key) => fieldErrors[key] !== ""
                     )
                   }
-                  className="w-full sm:flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0 text-sm sm:text-base"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      <span className="text-xs sm:text-sm">Updating...</span>
+                      Processing...
                     </div>
                   ) : (
                     <>
                       <Edit3 className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm">Update Book</span>
+                      Update Book
                     </>
                   )}
                 </Button>
@@ -543,15 +447,15 @@ const BookEditModal = ({ book }: { book: Book }) => {
                   type="button"
                   onClick={handleClose}
                   disabled={isLoading}
-                  className="w-full sm:flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0 text-sm sm:text-base"
+                  className="flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
                 >
                   Cancel
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

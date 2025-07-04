@@ -1,3 +1,4 @@
+import { CreateBookFormData, createBookSchema } from "@/zod";
 import {
   BookOpen,
   CheckCircle,
@@ -8,58 +9,31 @@ import {
   Plus,
   Tag,
   User,
-  X,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { validateISBN } from "../../lib/utils";
 import { useCreateBookMutation } from "../../redux/api/baseApi";
 import { Genre } from "../../types";
 import { Button } from "../ui/Button";
-
-// Zod validation schema based on API documentation
-const createBookSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Title is required")
-    .min(2, "Title must be at least 2 characters")
-    .max(200, "Title must be less than 200 characters"),
-  author: z
-    .string()
-    .min(1, "Author is required")
-    .min(2, "Author must be at least 2 characters")
-    .max(100, "Author must be less than 100 characters"),
-  genre: z.nativeEnum(Genre, {
-    errorMap: () => ({ message: "Please select a valid genre" }),
-  }),
-  isbn: z
-    .string()
-    .min(1, "ISBN is required")
-    .refine(
-      (value) => {
-        const result = validateISBN(value);
-        return result.isValid;
-      },
-      (value) => {
-        const result = validateISBN(value);
-        return { message: result.error || "Invalid ISBN format" };
-      }
-    ),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(1000, "Description must be less than 1000 characters"),
-  copies: z
-    .number()
-    .int("Copies must be a whole number")
-    .min(1, "At least 1 copy is required")
-    .max(100, "Maximum 100 copies allowed"),
-  available: z.boolean().default(true),
-});
-
-type CreateBookFormData = z.infer<typeof createBookSchema>;
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/Input";
+import { ScrollArea } from "../ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Textarea } from "../ui/Textarea";
 
 const BookAddModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -189,59 +163,42 @@ const BookAddModal = () => {
         Add Book
       </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto modal-scroll">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto my-4 max-h-[95vh] overflow-y-auto scrollbar-thin modal-scroll">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex-shrink-0">
-                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-                    Add New Book
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-500 truncate">
-                    Create a new book entry
-                  </p>
-                </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] md:max-h-[85vh] p-0">
+          <DialogHeader className="p-6 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg">
+                <BookOpen className="h-6 w-6 text-blue-600" />
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="p-1.5 sm:p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:transform-none flex-shrink-0"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </div>
-
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="p-4 sm:p-6 space-y-3 sm:space-y-4 pb-6"
-            >
+              <div>
+                <span className="text-xl font-bold text-gray-900">
+                  Add New Book
+                </span>
+                <DialogDescription>Create a new book entry</DialogDescription>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-full max-h-[calc(90vh-8rem)] md:max-h-[calc(85vh-8rem)]">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Form fields */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
                   Title *
                 </label>
-                <input
+                <Input
                   type="text"
                   name="title"
                   required
                   value={formData.title}
                   onChange={(e) => handleFieldChange("title", e.target.value)}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={
                     fieldErrors.title
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter book title"
                   disabled={isLoading}
-                  autoComplete="off"
                 />
                 {fieldErrors.title && (
                   <p className="text-xs text-red-600 mt-1">
@@ -255,20 +212,19 @@ const BookAddModal = () => {
                   <User className="h-4 w-4 mr-2 text-gray-500" />
                   Author *
                 </label>
-                <input
+                <Input
                   type="text"
                   name="author"
                   required
                   value={formData.author}
                   onChange={(e) => handleFieldChange("author", e.target.value)}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={
                     fieldErrors.author
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter author name"
                   disabled={isLoading}
-                  autoComplete="off"
                 />
                 {fieldErrors.author && (
                   <p className="text-xs text-red-600 mt-1">
@@ -277,32 +233,36 @@ const BookAddModal = () => {
                 )}
               </div>
 
-              <div>
+              <div className="w-full">
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <Tag className="h-4 w-4 mr-2 text-gray-500" />
                   Genre *
                 </label>
-                <select
+                <Select
                   name="genre"
-                  required
                   value={formData.genre}
-                  onChange={(e) =>
-                    handleFieldChange("genre", e.target.value as Genre)
+                  onValueChange={(value) =>
+                    handleFieldChange("genre", value as Genre)
                   }
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer ${
-                    fieldErrors.genre
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
                   disabled={isLoading}
                 >
-                  <option value={Genre.FICTION}>Fiction</option>
-                  <option value={Genre.NON_FICTION}>Non-Fiction</option>
-                  <option value={Genre.SCIENCE}>Science</option>
-                  <option value={Genre.HISTORY}>History</option>
-                  <option value={Genre.BIOGRAPHY}>Biography</option>
-                  <option value={Genre.FANTASY}>Fantasy</option>
-                </select>
+                  <SelectTrigger
+                    className={`w-full !bg-white !border-gray-200 ${
+                      fieldErrors.genre
+                        ? "border-red-300 focus:ring-red-500"
+                        : ""
+                    }`}
+                  >
+                    <SelectValue placeholder="Select a genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(Genre).map((genre) => (
+                      <SelectItem key={genre} value={genre}>
+                        {genre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {fieldErrors.genre && (
                   <p className="text-xs text-red-600 mt-1">
                     {fieldErrors.genre}
@@ -313,51 +273,31 @@ const BookAddModal = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <Hash className="h-4 w-4 mr-2 text-gray-500" />
-                  ISBN (10 or 13 digits) *
-                  <div className="relative ml-2 group">
-                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 max-w-xs">
-                      <div className="font-semibold mb-1">ISBN Format:</div>
-                      <div>• ISBN-10: 10 digits (e.g., 1234567890)</div>
-                      <div>• ISBN-13: 13 digits (e.g., 1234567890123)</div>
-                      <div className="mt-1 text-gray-300">
-                        Only numbers allowed, no spaces or hyphens
-                      </div>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
-                    </div>
-                  </div>
+                  ISBN *
                 </label>
-                <input
-                  type="text"
-                  name="isbn"
-                  required
-                  value={formData.isbn}
-                  onChange={(e) => {
-                    // Only allow digits
-                    const value = e.target.value.replace(/[^0-9]/g, "");
-                    handleFieldChange("isbn", value);
-                  }}
-                  onKeyPress={(e) => {
-                    // Allow only digits and control keys
-                    const char = String.fromCharCode(e.which);
-                    if (
-                      !/[0-9]/.test(char) &&
-                      e.key !== "Backspace" &&
-                      e.key !== "Delete" &&
-                      e.key !== "Tab"
-                    ) {
-                      e.preventDefault();
+                <div className="relative">
+                  <Input
+                    type="text"
+                    name="isbn"
+                    required
+                    value={formData.isbn}
+                    onChange={(e) => handleFieldChange("isbn", e.target.value)}
+                    className={
+                      fieldErrors.isbn
+                        ? "border-red-300 focus-visible:ring-red-500 pr-10"
+                        : "pr-10"
                     }
-                  }}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono ${
-                    fieldErrors.isbn
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="e.g., 1234567890 (10 digits) or 1234567890123 (13 digits)"
-                  disabled={isLoading}
-                  autoComplete="off"
-                />
+                    placeholder="Enter ISBN (10 or 13 digits)"
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {formData.isbn && !fieldErrors.isbn ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <HelpCircle className="h-5 w-5 text-gray-400" />
+                    )}
+                  </div>
+                </div>
                 {fieldErrors.isbn && (
                   <p className="text-xs text-red-600 mt-1">
                     {fieldErrors.isbn}
@@ -368,23 +308,22 @@ const BookAddModal = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                   <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                  Description
+                  Description *
                 </label>
-                <textarea
+                <Textarea
                   name="description"
+                  required
                   value={formData.description}
                   onChange={(e) =>
                     handleFieldChange("description", e.target.value)
                   }
-                  rows={3}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
+                  className={`min-h-[100px] ${
                     fieldErrors.description
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
                   }`}
-                  placeholder="Enter book description (optional)"
+                  placeholder="Enter book description"
                   disabled={isLoading}
-                  autoComplete="off"
                 />
                 {fieldErrors.description && (
                   <p className="text-xs text-red-600 mt-1">
@@ -398,57 +337,36 @@ const BookAddModal = () => {
                   <Copy className="h-4 w-4 mr-2 text-gray-500" />
                   Number of Copies *
                 </label>
-                <input
+                <Input
                   type="number"
                   name="copies"
-                  min="1"
-                  max="100"
                   required
+                  min={1}
+                  max={100}
                   value={formData.copies}
                   onChange={(e) =>
                     handleFieldChange("copies", parseInt(e.target.value) || 1)
                   }
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={
                     fieldErrors.copies
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                      ? "border-red-300 focus-visible:ring-red-500"
+                      : ""
+                  }
                   placeholder="Enter number of copies"
                   disabled={isLoading}
-                  autoComplete="off"
                 />
                 {fieldErrors.copies && (
                   <p className="text-xs text-red-600 mt-1">
                     {fieldErrors.copies}
                   </p>
                 )}
-              </div>
-
-              <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-                <input
-                  type="checkbox"
-                  name="available"
-                  id="available"
-                  checked={formData.available}
-                  onChange={(e) =>
-                    handleFieldChange("available", e.target.checked)
-                  }
-                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-                  disabled={isLoading}
-                />
-                <label
-                  htmlFor="available"
-                  className="text-sm font-medium text-gray-700 flex items-center"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">
-                    Available for borrowing
-                  </span>
-                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum 100 copies allowed
+                </p>
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex space-x-3 pt-4 border-t">
                 <Button
                   type="submit"
                   disabled={
@@ -457,17 +375,17 @@ const BookAddModal = () => {
                       (key) => fieldErrors[key] !== ""
                     )
                   }
-                  className="w-full sm:flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0 text-sm sm:text-base"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      <span className="text-xs sm:text-sm">Adding...</span>
+                      Processing...
                     </div>
                   ) : (
                     <>
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm">Add Book</span>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Book
                     </>
                   )}
                 </Button>
@@ -475,15 +393,15 @@ const BookAddModal = () => {
                   type="button"
                   onClick={handleClose}
                   disabled={isLoading}
-                  className="w-full sm:flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0 text-sm sm:text-base"
+                  className="flex-1 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none border-0"
                 >
                   Cancel
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

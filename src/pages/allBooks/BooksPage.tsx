@@ -14,7 +14,6 @@ import BookSkeleton from "../../components/books/BookSkeleton";
 import BookStats from "../../components/books/BookStats";
 import { Button } from "../../components/ui/Button";
 import { useGetBooksQuery } from "../../redux/api/baseApi";
-import type { Book } from "../../types";
 
 const BooksPage = () => {
   const {
@@ -59,12 +58,6 @@ const BooksPage = () => {
 
   // Get unique genres for filter
   const genres = [...new Set(books.map((book) => book.genre))];
-
-  // Handle borrow
-  const handleBorrow = (book: Book) => {
-    // The borrow modal will handle its own state and logic
-    console.log("Borrow book:", book.title);
-  };
 
   if (isLoading) {
     return <BookSkeleton />;
@@ -192,9 +185,9 @@ const BooksPage = () => {
 
       {/* Books View */}
       {viewMode === "list" ? (
-        <BookListView books={currentBooks} onBorrow={handleBorrow} />
+        <BookListView books={currentBooks} />
       ) : (
-        <BookGridView books={currentBooks} onBorrow={handleBorrow} />
+        <BookGridView books={currentBooks} />
       )}
 
       {/* Pagination */}

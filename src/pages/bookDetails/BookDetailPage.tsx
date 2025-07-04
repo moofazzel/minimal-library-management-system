@@ -13,7 +13,6 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BookBorrowModal from "../../components/books/BookBorrowModal";
 import { Badge } from "../../components/ui/Badge";
@@ -111,7 +110,6 @@ const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data, isLoading, error } = useGetBookByIdQuery(id || "");
-  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -322,14 +320,8 @@ const BookDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button
-                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0"
-                disabled={!book.available}
-                onClick={() => setIsBorrowModalOpen(true)}
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Borrow Book
-              </Button>
+              {/* Borrow Modal */}
+              <BookBorrowModal book={book} />
             </CardContent>
           </Card>
 
@@ -367,13 +359,6 @@ const BookDetailPage = () => {
           </Card>
         </div>
       </div>
-
-      {/* Borrow Modal */}
-      <BookBorrowModal
-        isOpen={isBorrowModalOpen}
-        onClose={() => setIsBorrowModalOpen(false)}
-        book={book}
-      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { CheckCircle, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Book } from "../../types";
 import BookBorrowModal from "./BookBorrowModal";
 import BookDeleteModal from "./BookDeleteModal";
@@ -31,9 +32,11 @@ const BookCard = ({ book }: BookCardProps) => {
       </div>
 
       <div className="flex-1">
-        <h3 className="text-lg font-bold mb-2 text-gray-900 group-hover:text-blue-600 transition-colors">
-          {book.title}
-        </h3>
+        <Link to={`/books/${book._id}`}>
+          <h3 className="text-lg font-bold mb-2 text-gray-900 group-hover:text-blue-600 transition-colors">
+            {book.title}
+          </h3>
+        </Link>
         <p className="text-sm text-gray-600 mb-2">by {book.author}</p>
         <p className="text-xs text-gray-500 mb-2 font-mono bg-gray-50 px-2 py-1 rounded">
           ISBN: {book.isbn}
