@@ -12,7 +12,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import BookAddModal from "../../components/books/BookAddModal";
 import BookBorrowModal from "../../components/books/BookBorrowModal";
@@ -75,7 +75,7 @@ const BooksPage = () => {
   const currentBooks = filteredBooks.slice(startIndex, endIndex);
 
   // Reset to first page when search/filter changes
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterGenre]);
 
@@ -151,13 +151,7 @@ const BooksPage = () => {
             Manage and explore your library collection
           </p>
         </div>
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Add Book
-        </Button>
+        <BookAddModal />
       </div>
 
       {/* Stats */}
@@ -487,10 +481,6 @@ const BooksPage = () => {
       )}
 
       {/* Modals */}
-      <BookAddModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-      />
 
       <BookEditModal
         isOpen={isEditModalOpen}

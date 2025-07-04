@@ -3,6 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

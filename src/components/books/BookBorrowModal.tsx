@@ -1,6 +1,8 @@
 import { BookOpen, Calendar, Copy, Hash, User, X } from "lucide-react";
 import type React from "react";
 import { startTransition, useEffect, useOptimistic, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useCreateBorrowMutation } from "../../redux/api/baseApi";
@@ -191,11 +193,6 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
     }
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = e.target.value;
-    handleFieldChange("dueDate", selectedDate);
-  };
-
   if (!isOpen) return null;
 
   // Use optimistic book for display
@@ -308,19 +305,29 @@ const BookBorrowModal: React.FC<BookBorrowModalProps> = ({
               <Calendar className="h-4 w-4 mr-2 text-gray-500" />
               Due Date *
             </label>
-            <input
-              type="date"
-              min={getMinDate()}
-              required
-              value={formData.dueDate}
-              onChange={handleDateChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
-                fieldErrors.dueDate
-                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                  : "border-gray-300"
-              }`}
-              disabled={isLoading}
-            />
+            <div className="relative w-full">
+              <DatePicker
+                selected={formData.dueDate ? new Date(formData.dueDate) : null}
+                onChange={(date: Date | null) => {
+                  if (date) {
+                    handleFieldChange(
+                      "dueDate",
+                      date.toISOString().split("T")[0]
+                    );
+                  }
+                }}
+                minDate={new Date(getMinDate())}
+                dateFormat="MMMM d, yyyy"
+                placeholderText="Select due date"
+                className={`w-full px-4 py-3 pl-10 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                  fieldErrors.dueDate
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300"
+                }`}
+                disabled={isLoading}
+              />
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+            </div>
             {fieldErrors.dueDate && (
               <p className="text-xs text-red-600 mt-1">{fieldErrors.dueDate}</p>
             )}

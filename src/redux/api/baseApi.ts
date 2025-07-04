@@ -1,10 +1,4 @@
-import type {
-  BaseQueryFn,
-  FetchArgs,
-  FetchBaseQueryError,
-} from "@reduxjs/toolkit/query";
-import { fetchBaseQuery } from "@reduxjs/toolkit/query";
-import { createApi } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_BASE_URL } from "../../config/api";
 import type {
   ApiErrorResponse,
@@ -21,7 +15,6 @@ import type {
 } from "../../types";
 
 const baseUrl = API_BASE_URL;
-console.log("🔍 API Base URL:", baseUrl);
 
 // Simple error type
 export interface ApiError {
@@ -29,76 +22,10 @@ export interface ApiError {
   data: ApiErrorResponse;
 }
 
-// Enhanced base query with better error handling
-const baseQuery: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError | ApiError
-> = async (args, api, extraOptions) => {
-  try {
-    console.log("🔍 API Request Details:", {
-      url: typeof args === "string" ? args : args.url,
-      method: typeof args === "string" ? "GET" : args.method || "GET",
-      body: typeof args === "string" ? undefined : args.body,
-      headers: typeof args === "string" ? undefined : args.headers,
-    });
-
-    const result = await fetchBaseQuery({
-      baseUrl,
-      prepareHeaders: (headers) => {
-        headers.set("Content-Type", "application/json");
-        headers.set("Accept", "application/json");
-        console.log(
-          "🔍 Request Headers:",
-          Object.fromEntries(headers.entries())
-        );
-        return headers;
-      },
-    })(args, api, extraOptions);
-
-    if (result.error) {
-      console.error("🔍 API Error Response:", result.error);
-      console.error("🔍 Error Status:", result.error.status);
-      console.error("🔍 Error Data:", result.error.data);
-
-      const error: ApiError = {
-        status:
-          "status" in result.error && typeof result.error.status === "number"
-            ? result.error.status
-            : 500,
-        data: {
-          message:
-            "data" in result.error &&
-            typeof result.error.data === "object" &&
-            result.error.data
-              ? (result.error.data as { message?: string }).message ||
-                "An error occurred"
-              : "Network error",
-          success: false,
-        },
-      };
-      return { error };
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Network Error:", error);
-    return {
-      error: {
-        status: 500,
-        data: {
-          message: "Network error - Unable to connect to the server",
-          success: false,
-        },
-      },
-    };
-  }
-};
-
 export const baseApi = createApi({
   reducerPath: "baseApi",
-  baseQuery,
-  tagTypes: ["Book", "Borrow"],
+  baseQuery: fetchBaseQuery({ baseUrl }),
+  tagTypes: ["Books", "Borrows"],
   endpoints: (builder) => ({
     // Get all books
     getBooks: builder.query<PaginatedResponse<Book>, BookQueryParams>({
@@ -106,13 +33,13 @@ export const baseApi = createApi({
         url: "/books",
         params,
       }),
-      providesTags: ["Book"],
+      providesTags: ["Books"],
     }),
 
     // Get a single book by ID
     getBookById: builder.query<ApiResponse<Book>, string>({
       query: (id) => `/books/${id}`,
-      providesTags: (_result, _error, id) => [{ type: "Book", id }],
+      providesTags: (_result, _error, id) => [{ type: "Books", id }],
     }),
 
     // Create a new book
@@ -122,7 +49,7 @@ export const baseApi = createApi({
         method: "POST",
         body: bookData,
       }),
-      invalidatesTags: ["Book"],
+      invalidatesTags: ["Books"],
     }),
 
     // Update an existing book
@@ -133,8 +60,8 @@ export const baseApi = createApi({
         body: bookData,
       }),
       invalidatesTags: (_result, _error, { id }) => [
-        { type: "Book", id },
-        "Book",
+        { type: "Books", id },
+        "Books",
       ],
     }),
 
@@ -144,7 +71,7 @@ export const baseApi = createApi({
         url: `/books/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Book"],
+      invalidatesTags: ["Books"],
     }),
 
     // Get all borrows
@@ -153,7 +80,7 @@ export const baseApi = createApi({
         url: "/borrows",
         params,
       }),
-      providesTags: ["Borrow"],
+      providesTags: ["Borrows"],
     }),
 
     // Create a new borrow
@@ -163,13 +90,13 @@ export const baseApi = createApi({
         method: "POST",
         body: borrowData,
       }),
-      invalidatesTags: ["Borrow", "Book"],
+      invalidatesTags: ["Borrows", "Books"],
     }),
 
     // Get borrow summary
     getBorrowSummary: builder.query<ApiResponse<BorrowSummary[]>, void>({
       query: () => "/borrow",
-      providesTags: ["Borrow"],
+      providesTags: ["Borrows"],
     }),
   }),
 });
