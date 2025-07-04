@@ -5,11 +5,12 @@ const getApiBaseUrl = () => {
     typeof window !== "undefined" &&
     window.location.hostname !== "localhost"
   ) {
-    return "https://phl-2-assignment-03-5vy5.vercel.app/api/";
+    // Use the production API URL
+    return "https://phl-2-assignment-03-5vy5.vercel.app/api";
   }
 
   // Development - use proxy
-  return "/api/";
+  return "/api";
 };
 
 export const API_BASE_URL = getApiBaseUrl();
