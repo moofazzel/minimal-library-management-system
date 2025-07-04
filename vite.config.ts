@@ -22,4 +22,16 @@ export default defineConfig({
       },
     },
   },
+  base: "/",
+  build: {
+    outDir: "dist",
+    assetsDir: "assets",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+        },
+      },
+    },
+  },
 });
